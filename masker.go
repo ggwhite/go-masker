@@ -30,28 +30,29 @@ type Masker struct{}
 // Struct must input two pointer struct, source(s) and target(t), add tag mask on struct fields, after Struct(), target(t)'s filed will be masked with the tag format type
 //
 // Example:
-// type Foo struct {
-//     Name      string `mask:"name"`
-//     Email     string `mask:"email"`
-//     Password  string `mask:"password"`
-//     ID        string `mask:"id"`
-//     Address   string `mask:"addr"`
-//     Mobile    string `mask:"mobile"`
-//     Telephone string `mask:"tel"`
-//     Credit    string `mask:"credit"`
-// }
 //
-// func main() {
-//     s := &Foo{
-//	       Name: ...,
-//         Email: ...,
-//         Password: ...,
-// }
-//     t := &Foo{}
+//   type Foo struct {
+//       Name      string `mask:"name"`
+//       Email     string `mask:"email"`
+//       Password  string `mask:"password"`
+//       ID        string `mask:"id"`
+//       Address   string `mask:"addr"`
+//       Mobile    string `mask:"mobile"`
+//       Telephone string `mask:"tel"`
+//       Credit    string `mask:"credit"`
+//   }
 //
-//     Struct(s, t)
-//     fmt.Println(t)
-// }
+//   func main() {
+//       s := &Foo{
+//	         Name: ...,
+//           Email: ...,
+//           Password: ...,
+//       }
+//       t := &Foo{}
+//
+//       Struct(s, t)
+//       fmt.Println(t)
+//   }
 func (m *Masker) Struct(s, t interface{}) error {
 	sv := reflect.ValueOf(s)
 	if sv.Kind() != reflect.Ptr {
@@ -225,28 +226,29 @@ func init() {
 // Struct must input two pointer struct, source(s) and target(t), add tag mask on struct fields, after Struct(), target(t)'s filed will be masked with the tag format type
 //
 // Example:
-// type Foo struct {
-//     Name      string `mask:"name"`
-//     Email     string `mask:"email"`
-//     Password  string `mask:"password"`
-//     ID        string `mask:"id"`
-//     Address   string `mask:"addr"`
-//     Mobile    string `mask:"mobile"`
-//     Telephone string `mask:"tel"`
-//     Credit    string `mask:"credit"`
-// }
 //
-// func main() {
-//     s := &Foo{
-//	       Name: ...,
-//         Email: ...,
-//         Password: ...,
-// }
-//     t := &Foo{}
+//   type Foo struct {
+//       Name      string `mask:"name"`
+//       Email     string `mask:"email"`
+//       Password  string `mask:"password"`
+//       ID        string `mask:"id"`
+//       Address   string `mask:"addr"`
+//       Mobile    string `mask:"mobile"`
+//       Telephone string `mask:"tel"`
+//       Credit    string `mask:"credit"`
+//   }
 //
-//     Struct(s, t)
-//     fmt.Println(t)
-// }
+//   func main() {
+//       s := &Foo{
+//	         Name: ...,
+//           Email: ...,
+//           Password: ...,
+//       }
+//       t := &Foo{}
+//
+//       Struct(s, t)
+//       fmt.Println(t)
+//   }
 func Struct(s, t interface{}) error {
 	return instance.Struct(s, t)
 }
