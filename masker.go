@@ -44,13 +44,15 @@ type Masker struct{}
 //
 //   func main() {
 //       s := &Foo{
-//	         Name: ...,
+//           Name: ...,
 //           Email: ...,
 //           Password: ...,
 //       }
 //       t := &Foo{}
 //
-//       Struct(s, t)
+//       m := masker.New()
+//
+//       m.Struct(s, t)
 //       fmt.Println(t)
 //   }
 func (m *Masker) Struct(s, t interface{}) error {
@@ -240,7 +242,7 @@ func init() {
 //
 //   func main() {
 //       s := &Foo{
-//	         Name: ...,
+//           Name: ...,
 //           Email: ...,
 //           Password: ...,
 //       }
