@@ -1,4 +1,4 @@
-package cmd
+package masker
 
 func overlay(str string, overlay string, start int, end int) (overlayed string) {
 	r := []rune(str)
