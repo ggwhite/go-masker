@@ -2,7 +2,6 @@
 package masker
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"strings"
@@ -22,12 +21,13 @@ const (
 	MTelephone        = "tel"
 	MId               = "id"
 	MCreditCard       = "credit"
+	MStruct           = "struct"
 )
 
 // Masker is a instance to marshal masked string
 type Masker struct{}
 
-// Struct must input two pointer struct, source(s) and target(t), add tag mask on struct fields, after Struct(), target(t)'s filed will be masked with the tag format type
+// Struct must input a interface{}, add tag mask on struct fields, after Struct(), return a pointer interface{} of input type and it will be masked with the tag format type
 //
 // Example:
 //
@@ -40,6 +40,7 @@ type Masker struct{}
 //       Mobile    string `mask:"mobile"`
 //       Telephone string `mask:"tel"`
 //       Credit    string `mask:"credit"`
+//       Foo       *Foo   `mask:"struct"`
 //   }
 //
 //   func main() {
@@ -47,57 +48,68 @@ type Masker struct{}
 //           Name: ...,
 //           Email: ...,
 //           Password: ...,
+//           Foo: &{
+//               Name: ...,
+//               Email: ...,
+//               Password: ...,
+//           }
 //       }
-//       t := &Foo{}
 //
 //       m := masker.New()
 //
-//       m.Struct(s, t)
-//       fmt.Println(t)
+//       t, err := m.Struct(s)
+//
+//       fmt.Println(t.(*Foo))
 //   }
-func (m *Masker) Struct(s, t interface{}) error {
-	sv := reflect.ValueOf(s)
-	if sv.Kind() != reflect.Ptr {
-		return fmt.Errorf("source non-pointer %v", sv.Type())
-	}
-	tv := reflect.ValueOf(t)
-	if tv.Kind() != reflect.Ptr {
-		return fmt.Errorf("target non-pointer %v", tv.Type())
-	}
-	if sv.Type() != tv.Type() {
-		return fmt.Errorf("source(%v) and target(%v) are not same type", sv.Type(), tv.Type())
-	}
-	sv = sv.Elem()
-	tv = tv.Elem()
+func (m *Masker) Struct(s interface{}) (interface{}, error) {
+	var selem, tptr reflect.Value
 
-	for i := 0; i < sv.NumField(); i++ {
-		if mtag, ok := sv.Type().Field(i).Tag.Lookup(tagName); ok {
+	st := reflect.TypeOf(s)
+
+	if st.Kind() == reflect.Ptr {
+		tptr = reflect.New(st.Elem())
+		selem = reflect.ValueOf(s).Elem()
+	} else {
+		tptr = reflect.New(st)
+		selem = reflect.ValueOf(s)
+	}
+
+	for i := 0; i < selem.NumField(); i++ {
+		if mtag, ok := selem.Type().Field(i).Tag.Lookup(tagName); ok {
 			switch mtype(mtag) {
 			case MPassword:
-				tv.Field(i).SetString(m.Password(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.Password(selem.Field(i).String()))
 			case MName:
-				tv.Field(i).SetString(m.Name(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.Name(selem.Field(i).String()))
 			case MAddress:
-				tv.Field(i).SetString(m.Address(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.Address(selem.Field(i).String()))
 			case MEmail:
-				tv.Field(i).SetString(m.Email(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.Email(selem.Field(i).String()))
 			case MMobile:
-				tv.Field(i).SetString(m.Mobile(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.Mobile(selem.Field(i).String()))
 			case MId:
-				tv.Field(i).SetString(m.ID(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.ID(selem.Field(i).String()))
 			case MTelephone:
-				tv.Field(i).SetString(m.Telephone(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.Telephone(selem.Field(i).String()))
 			case MCreditCard:
-				tv.Field(i).SetString(m.CreditCard(sv.Field(i).String()))
+				tptr.Elem().Field(i).SetString(m.CreditCard(selem.Field(i).String()))
+			case MStruct:
+				if !selem.Field(i).IsNil() {
+					_t, err := m.Struct(selem.Field(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+				}
 			default:
-				tv.Field(i).Set(sv.Field(i))
+				tptr.Elem().Field(i).Set(selem.Field(i))
 			}
 		} else {
-			tv.Field(i).Set(sv.Field(i))
+			tptr.Elem().Field(i).Set(selem.Field(i))
 		}
 	}
 
-	return nil
+	return tptr.Interface(), nil
 }
 
 // Name mask the second world and the third world
@@ -225,7 +237,7 @@ func init() {
 	instance = New()
 }
 
-// Struct must input two pointer struct, source(s) and target(t), add tag mask on struct fields, after Struct(), target(t)'s filed will be masked with the tag format type
+// Struct must input a interface{}, add tag mask on struct fields, after Struct(), return a pointer interface{} of input type and it will be masked with the tag format type
 //
 // Example:
 //
@@ -238,6 +250,7 @@ func init() {
 //       Mobile    string `mask:"mobile"`
 //       Telephone string `mask:"tel"`
 //       Credit    string `mask:"credit"`
+//       Foo       *Foo   `mask:"struct"`
 //   }
 //
 //   func main() {
@@ -245,14 +258,19 @@ func init() {
 //           Name: ...,
 //           Email: ...,
 //           Password: ...,
+//           Foo: &{
+//               Name: ...,
+//               Email: ...,
+//               Password: ...,
+//           }
 //       }
-//       t := &Foo{}
 //
-//       Struct(s, t)
-//       fmt.Println(t)
+//       t, err := masker.Struct(s)
+//
+//       fmt.Println(t.(*Foo))
 //   }
-func Struct(s, t interface{}) error {
-	return instance.Struct(s, t)
+func Struct(s interface{}) (interface{}, error) {
+	return instance.Struct(s)
 }
 
 // Name mask the second world and the third world
