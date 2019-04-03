@@ -5,69 +5,6 @@ import (
 	"testing"
 )
 
-func TestMasker_Struct(t *testing.T) {
-	type Foo struct {
-		Name      string `mask:"name"`
-		Email     string `mask:"email"`
-		Password  string `mask:"password"`
-		ID        string `mask:"id"`
-		Address   string `mask:"addr"`
-		Mobile    string `mask:"mobile"`
-		Telephone string `mask:"tel"`
-		Credit    string `mask:"credit"`
-	}
-
-	type args struct {
-		s interface{}
-		t interface{}
-	}
-	tests := []struct {
-		name    string
-		m       *Masker
-		args    args
-		wantErr bool
-		want    interface{}
-	}{
-		{
-			name: "Happy Pass",
-			args: args{
-				s: &Foo{
-					Name:      "王大大餅",
-					ID:        "A123456789",
-					Mobile:    "0912345678",
-					Email:     "qqabcd@taiwanmobile.com",
-					Password:  "idontwantuknow",
-					Address:   "台北市大安區敦化南路五段7788號378樓",
-					Telephone: "(02)0800-1234",
-					Credit:    "1234567890123456",
-				},
-				t: &Foo{},
-			},
-			wantErr: false,
-			want: Foo{
-				Name:      "王**餅",
-				ID:        "A12345****",
-				Mobile:    "0912***678",
-				Email:     "qqa****@taiwanmobile.com",
-				Password:  "************",
-				Address:   "台北市大安區******",
-				Telephone: "(02)0800-****",
-				Credit:    "123456******3456",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.m.Struct(tt.args.s, tt.args.t); (err != nil) != tt.wantErr {
-				t.Errorf("Masker.Struct() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.want != nil && reflect.DeepEqual(tt.want, tt.args.t) {
-				t.Errorf("Struct() = %v, want %v", tt.args.t, tt.want)
-			}
-		})
-	}
-}
-
 func TestMasker_Name(t *testing.T) {
 	type args struct {
 		i string
@@ -442,68 +379,6 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := New(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestStruct(t *testing.T) {
-	type Foo struct {
-		Name      string `mask:"name"`
-		Email     string `mask:"email"`
-		Password  string `mask:"password"`
-		ID        string `mask:"id"`
-		Address   string `mask:"addr"`
-		Mobile    string `mask:"mobile"`
-		Telephone string `mask:"tel"`
-		Credit    string `mask:"credit"`
-	}
-
-	type args struct {
-		s interface{}
-		t interface{}
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    interface{}
-	}{
-		{
-			name: "Happy Pass",
-			args: args{
-				s: &Foo{
-					Name:      "王大大餅",
-					ID:        "A123456789",
-					Mobile:    "0912345678",
-					Email:     "qqabcd@taiwanmobile.com",
-					Password:  "idontwantuknow",
-					Address:   "台北市大安區敦化南路五段7788號378樓",
-					Telephone: "(02)0800-1234",
-					Credit:    "1234567890123456",
-				},
-				t: &Foo{},
-			},
-			wantErr: false,
-			want: Foo{
-				Name:      "王**餅",
-				ID:        "A12345****",
-				Mobile:    "0912***678",
-				Email:     "qqa****@taiwanmobile.com",
-				Password:  "************",
-				Address:   "台北市大安區******",
-				Telephone: "(02)0800-****",
-				Credit:    "123456******3456",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := Struct(tt.args.s, tt.args.t); (err != nil) != tt.wantErr {
-				t.Errorf("Struct() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.want != nil && reflect.DeepEqual(tt.want, tt.args.t) {
-				t.Errorf("Struct() = %v, want %v", tt.args.t, tt.want)
 			}
 		})
 	}
