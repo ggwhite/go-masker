@@ -27,19 +27,31 @@ const (
 // Masker is a instance to marshal masked string
 type Masker struct{}
 
-// Struct must input two pointer struct, source(s) and target(t), add tag `mask` on struct fields, after `Struct()`, target(t)'s filed will be masked with the tag format type
+// Struct must input two pointer struct, source(s) and target(t), add tag mask on struct fields, after Struct(), target(t)'s filed will be masked with the tag format type
 //
-// Tag Name: mask
+// Example:
+//   type Foo struct {
+//   	Name      string `mask:"name"`
+//   	Email     string `mask:"email"`
+//   	Password  string `mask:"password"`
+//   	ID        string `mask:"id"`
+//   	Address   string `mask:"addr"`
+//   	Mobile    string `mask:"mobile"`
+//   	Telephone string `mask:"tel"`
+//   	Credit    string `mask:"credit"`
+//   }
 //
-// Tag Value:
-//    * password
-//    * name
-//    * addr
-//    * email
-//    * mobile
-//    * tel
-//    * id
-//    * cerdit
+//   func main() {
+//   	s := &Foo{
+//			Name: ...,
+//			Email: ...,
+//			Password: ...,
+//   	}
+//   	t := &Foo{}
+//
+//   	Struct(s, t)
+//   	fmt.Println(t)
+//   }
 func (m *Masker) Struct(s, t interface{}) error {
 	sv := reflect.ValueOf(s)
 	if sv.Kind() != reflect.Ptr {
@@ -88,8 +100,8 @@ func (m *Masker) Struct(s, t interface{}) error {
 // Name mask the second world and the third world
 //
 // Example:
-//   * input: ABCD
-//   * output: A**D
+//   input: ABCD
+//   output: A**D
 func (*Masker) Name(i string) string {
 	l := len(i)
 
@@ -107,8 +119,8 @@ func (*Masker) Name(i string) string {
 // ID mask last 4 worlds of ID number
 //
 // Example:
-//   * input: A123456789
-//   * output: A12345****
+//   input: A123456789
+//   output: A12345****
 func (*Masker) ID(i string) string {
 	return overlay(i, "****", 6, 10)
 }
@@ -116,8 +128,8 @@ func (*Masker) ID(i string) string {
 // Address keep first 6 worlds, mask the overs
 //
 // Example:
-//   * input: `台北市內湖區內湖路一段737巷1號1樓`
-//   * output: `台北市內湖區******`
+//   input: 台北市內湖區內湖路一段737巷1號1樓
+//   output: 台北市內湖區******
 func (*Masker) Address(i string) string {
 	l := len(i)
 	if l <= 6 {
@@ -129,10 +141,10 @@ func (*Masker) Address(i string) string {
 // CreditCard mask middle 6 worlds from 7'th world
 //
 // Example:
-//   * input1: `1234567890123456` (VISA, JCB, MasterCard)(len = 16)
-//   * output1: `123456******3456`
-//   * input2: `123456789012345` (American Express)(len = 15)
-//   * output2: `123456******345`
+//   input1: 1234567890123456 (VISA, JCB, MasterCard)(len = 16)
+//   output1: 123456******3456
+//   input2: 123456789012345` (American Express)(len = 15)
+//   output2: 123456******345`
 func (*Masker) CreditCard(i string) string {
 	return overlay(i, "******", 6, 12)
 }
@@ -140,8 +152,8 @@ func (*Masker) CreditCard(i string) string {
 // Email keep domain and first 3 worlds
 //
 // Example:
-//   * input: `ggw.chang@gmail.com`
-//   * output: `ggw****@gmail.com`
+//   input: ggw.chang@gmail.com
+//   output: ggw****@gmail.com
 func (*Masker) Email(i string) string {
 	tmp := strings.Split(i, "@")
 	addr := tmp[0]
@@ -155,8 +167,8 @@ func (*Masker) Email(i string) string {
 // Mobile mask mobile 3 worlds from 4'th world
 //
 // Example:
-//   * input: `0987654321`
-//   * output: `0987***321`
+//   input: 0987654321
+//   output: 0987***321
 func (*Masker) Mobile(i string) string {
 	return overlay(i, "***", 4, 7)
 }
@@ -164,8 +176,8 @@ func (*Masker) Mobile(i string) string {
 // Telephone remove `(`, `)`, ` `, `-` chart, and mask last 4 worlds of telephone number, format to `(??)????-????`
 //
 // Example:
-//   * input: `0227993078`
-//   * output: `(02)2799-****`
+//   input: 0227993078
+//   output: (02)2799-****
 func (*Masker) Telephone(i string) string {
 	i = strings.Replace(i, " ", "", -1)
 	i = strings.Replace(i, "(", "", -1)
@@ -210,19 +222,31 @@ func init() {
 	instance = New()
 }
 
-// Struct must input two pointer struct, source(s) and target(t), add tag `mask` on struct fields, after `Struct()`, target(t)'s filed will be masked with the tag format type
+// Struct must input two pointer struct, source(s) and target(t), add tag mask on struct fields, after Struct(), target(t)'s filed will be masked with the tag format type
 //
-// Tag Name: mask
+// Example:
+//   type Foo struct {
+//   	Name      string `mask:"name"`
+//   	Email     string `mask:"email"`
+//   	Password  string `mask:"password"`
+//   	ID        string `mask:"id"`
+//   	Address   string `mask:"addr"`
+//   	Mobile    string `mask:"mobile"`
+//   	Telephone string `mask:"tel"`
+//   	Credit    string `mask:"credit"`
+//   }
 //
-// Tag Value:
-//    * password
-//    * name
-//    * addr
-//    * email
-//    * mobile
-//    * tel
-//    * id
-//    * cerdit
+//   func main() {
+//   	s := &Foo{
+//			Name: ...,
+//			Email: ...,
+//			Password: ...,
+//   	}
+//   	t := &Foo{}
+//
+//   	Struct(s, t)
+//   	fmt.Println(t)
+//   }
 func Struct(s, t interface{}) error {
 	return instance.Struct(s, t)
 }
@@ -230,8 +254,8 @@ func Struct(s, t interface{}) error {
 // Name mask the second world and the third world
 //
 // Example:
-//   * input: `ABCD`
-//   * output: `A**D`
+//   input: ABCD
+//   output: A**D
 func Name(i string) string {
 	return instance.Name(i)
 }
@@ -239,8 +263,8 @@ func Name(i string) string {
 // ID mask last 4 worlds of ID number
 //
 // Example:
-//   * input: `A123456789`
-//   * output: `A12345****`
+//   input: A123456789
+//   output: A12345****
 func ID(i string) string {
 	return instance.ID(i)
 }
@@ -248,8 +272,8 @@ func ID(i string) string {
 // Address keep first 6 worlds, mask the overs
 //
 // Example:
-//   * input: `台北市內湖區內湖路一段737巷1號1樓`
-//   * output: `台北市內湖區******`
+//   input: 台北市內湖區內湖路一段737巷1號1樓
+//   output: 台北市內湖區******
 func Address(i string) string {
 	return instance.Address(i)
 }
@@ -257,10 +281,10 @@ func Address(i string) string {
 // CreditCard mask middle 6 worlds from 7'th world
 //
 // Example:
-//   * input1: `1234567890123456` (VISA, JCB, MasterCard)(len = 16)
-//   * output1: `123456******3456`
-//   * input2: `123456789012345` (American Express)(len = 15)
-//   * output2: `123456******345`
+//   input1: 1234567890123456 (VISA, JCB, MasterCard)(len = 16)
+//   output1: 123456******3456
+//   input2: 123456789012345 (American Express)(len = 15)
+//   output2: 123456******345
 func CreditCard(i string) string {
 	return instance.CreditCard(i)
 }
@@ -268,8 +292,8 @@ func CreditCard(i string) string {
 // Email keep domain and first 3 worlds
 //
 // Example:
-//   * input: `ggw.chang@gmail.com`
-//   * output: `ggw****@gmail.com`
+//   input: ggw.chang@gmail.com
+//   output: ggw****@gmail.com
 func Email(i string) string {
 	return instance.Email(i)
 }
@@ -277,8 +301,8 @@ func Email(i string) string {
 // Mobile mask mobile 3 worlds from 4'th world
 //
 // Example:
-//   * input: `0987654321`
-//   * output: `0987***321`
+//   input: 0987654321
+//   output: 0987***321
 func Mobile(i string) string {
 	return instance.Mobile(i)
 }
@@ -286,8 +310,8 @@ func Mobile(i string) string {
 // Telephone remove `(`, `)`, ` `, `-` chart, and mask last 4 worlds of telephone number, format to `(??)????-????`
 //
 // Example:
-//   * input: `0227993078`
-//   * output: `(02)2799-****`
+//   input: 0227993078
+//   output: (02)2799-****
 func Telephone(i string) string {
 	return instance.Telephone(i)
 }
