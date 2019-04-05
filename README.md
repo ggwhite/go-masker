@@ -1,17 +1,16 @@
 # Golang Masker
 
-Utility for mask personal information.
+Golang Masker is a simple utility of creating a mask for sensitive information.
 
-You can mask the string by the function of the package instance, or new a masker to mask your string.
-
-#### Use package
+There are two ways to get a masker instance:
+#### 1. get a instance directly from go-masker package
 ``` golang
 package main
 
 import (
 	masker "github.com/ggwhite/go-masker"
 )
-
+l
 func main() {
 	masker.Name("ggwhite")
 	masker.ID("A123456789")
@@ -19,7 +18,7 @@ func main() {
 }
 ```
 
-#### Use new masker
+#### 2. get a instance via `masker.New()`
 ``` golang
 package main
 
@@ -39,20 +38,19 @@ func main() {
 
 |Type        |Const        |Tag        |Description                                                                                            |
 |:----------:|:-----------:|:---------:|:------------------------------------------------------------------------------------------------------|
-|Name        |MName        |name       |mask the second world and the third world                                                              |
+|Name        |MName        |name       |mask the second letter and the third letter                                                              |
 |Password    |MPassword    |password   |always return `************`                                                                           |
-|Address     |MAddress     |addr       |keep first 6 worlds, mask the overs                                                                    |
-|Email       |MEmail       |email      |keep domain and first 3 worlds                                                                         |
-|Mobile      |MMobile      |mobile     |mask mobile 3 worlds from 4'th world                                                                   |
-|Telephone   |MTelephone   |tel        |remove `(`, `)`, ` `, `-` chart, and mask last 4 worlds of telephone number, format to `(??)????-????` |
-|ID          |MID          |id         |mask last 4 worlds of ID number                                                                        |
-|CreditCard  |MCreditCard  |credit     |mask middle 6 worlds from 7'th world                                                                   |
+|Address     |MAddress     |addr       |keep first 6 letters, mask the rest                                                                    |
+|Email       |MEmail       |email      |keep domain and the first 3 letters                                                                         |
+|Mobile      |MMobile      |mobile     |mask 3 digits from the 4'th digit                                                                   |
+|Telephone   |MTelephone   |tel        |remove `(`, `)`, ` `, `-` chart, and mask last 4 digits of telephone number, format to `(??)????-????` |
+|ID          |MID          |id         |mask last 4 digits of ID number                                                                        |
+|CreditCard  |MCreditCard  |credit     |mask 6 digits from the 7'th digit                                                                   |
 |Struct      |MStruct      |struct     |mask the struct                                                                                        |
 
 ## Mask the `String`
 
-Give mask type and input string
-
+`String` methomd requires two parameters, a mask type CONST and a string:
 ``` golang
 package main
 
