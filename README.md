@@ -3,14 +3,14 @@
 Golang Masker is a simple utility of creating a mask for sensitive information.
 
 There are two ways to get a masker instance:
-#### 1. get a instance directly from go-masker package
+#### 1. Get a instance directly from go-masker package
 ``` golang
 package main
 
 import (
 	masker "github.com/ggwhite/go-masker"
 )
-l
+
 func main() {
 	masker.Name("ggwhite")
 	masker.ID("A123456789")
@@ -18,7 +18,7 @@ func main() {
 }
 ```
 
-#### 2. get a instance via `masker.New()`
+#### 2. Get a instance via `masker.New()`
 ``` golang
 package main
 
