@@ -19,7 +19,7 @@ const (
 	MEmail            = "email"
 	MMobile           = "mobile"
 	MTelephone        = "tel"
-	MId               = "id"
+	MID               = "id"
 	MCreditCard       = "credit"
 	MStruct           = "struct"
 )
@@ -75,41 +75,79 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 	}
 
 	for i := 0; i < selem.NumField(); i++ {
-		if mtag, ok := selem.Type().Field(i).Tag.Lookup(tagName); ok {
-			switch mtype(mtag) {
-			case MPassword:
-				tptr.Elem().Field(i).SetString(m.Password(selem.Field(i).String()))
-			case MName:
-				tptr.Elem().Field(i).SetString(m.Name(selem.Field(i).String()))
-			case MAddress:
-				tptr.Elem().Field(i).SetString(m.Address(selem.Field(i).String()))
-			case MEmail:
-				tptr.Elem().Field(i).SetString(m.Email(selem.Field(i).String()))
-			case MMobile:
-				tptr.Elem().Field(i).SetString(m.Mobile(selem.Field(i).String()))
-			case MId:
-				tptr.Elem().Field(i).SetString(m.ID(selem.Field(i).String()))
-			case MTelephone:
-				tptr.Elem().Field(i).SetString(m.Telephone(selem.Field(i).String()))
-			case MCreditCard:
-				tptr.Elem().Field(i).SetString(m.CreditCard(selem.Field(i).String()))
-			case MStruct:
-				if !selem.Field(i).IsNil() {
-					_t, err := m.Struct(selem.Field(i).Interface())
-					if err != nil {
-						return nil, err
-					}
-					tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
-				}
-			default:
-				tptr.Elem().Field(i).Set(selem.Field(i))
-			}
-		} else {
+		mtag := selem.Type().Field(i).Tag.Get(tagName)
+		switch selem.Field(i).Type().Kind() {
+		default:
 			tptr.Elem().Field(i).Set(selem.Field(i))
+		case reflect.String:
+			tptr.Elem().Field(i).SetString(m.String(mtype(mtag), selem.Field(i).String()))
+		case reflect.Struct:
+			if mtype(mtag) == MStruct {
+				_t, err := m.Struct(selem.Field(i).Interface())
+				if err != nil {
+					return nil, err
+				}
+				tptr.Elem().Field(i).Set(reflect.ValueOf(_t).Elem())
+			}
+		case reflect.Ptr:
+			if selem.Field(i).IsNil() {
+				continue
+			}
+			if mtype(mtag) == MStruct {
+				_t, err := m.Struct(selem.Field(i).Interface())
+				if err != nil {
+					return nil, err
+				}
+				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+			}
+		case reflect.Slice:
+			if len(mtag) == 0 {
+				continue
+			}
+			if selem.Field(i).Type().Elem().Kind() != reflect.String {
+				tptr.Elem().Field(i).Set(selem.Field(i))
+				continue
+			}
+			orgval := selem.Field(i).Interface().([]string)
+			newval := make([]string, len(orgval))
+			for i, val := range selem.Field(i).Interface().([]string) {
+				newval[i] = m.String(mtype(mtag), val)
+			}
+			tptr.Elem().Field(i).Set(reflect.ValueOf(newval))
 		}
 	}
 
 	return tptr.Interface(), nil
+}
+
+// String mask input string of the mask type
+//
+// Example:
+//
+//   masker.String(masker.MName, "ggwhite")
+//   masker.String(masker.MID, "A123456789")
+//   masker.String(masker.MMobile, "0987987987")
+func (m *Masker) String(t mtype, i string) string {
+	switch t {
+	default:
+		return i
+	case MPassword:
+		return m.Password(i)
+	case MName:
+		return m.Name(i)
+	case MAddress:
+		return m.Address(i)
+	case MEmail:
+		return m.Email(i)
+	case MMobile:
+		return m.Mobile(i)
+	case MID:
+		return m.ID(i)
+	case MTelephone:
+		return m.Telephone(i)
+	case MCreditCard:
+		return m.CreditCard(i)
+	}
 }
 
 // Name mask the second world and the third world
@@ -119,6 +157,10 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 //   output: A**D
 func (*Masker) Name(i string) string {
 	l := len(i)
+
+	if l == 0 {
+		return ""
+	}
 
 	if l == 2 || l == 3 {
 		return overlay(i, "**", 1, 2)
@@ -137,6 +179,9 @@ func (*Masker) Name(i string) string {
 //   input: A123456789
 //   output: A12345****
 func (*Masker) ID(i string) string {
+	if len(i) == 0 {
+		return ""
+	}
 	return overlay(i, "****", 6, 10)
 }
 
@@ -147,6 +192,9 @@ func (*Masker) ID(i string) string {
 //   output: 台北市內湖區******
 func (*Masker) Address(i string) string {
 	l := len(i)
+	if l == 0 {
+		return ""
+	}
 	if l <= 6 {
 		return "******"
 	}
@@ -161,6 +209,9 @@ func (*Masker) Address(i string) string {
 //   input2: 123456789012345` (American Express)(len = 15)
 //   output2: 123456******345`
 func (*Masker) CreditCard(i string) string {
+	if len(i) == 0 {
+		return ""
+	}
 	return overlay(i, "******", 6, 12)
 }
 
@@ -170,6 +221,10 @@ func (*Masker) CreditCard(i string) string {
 //   input: ggw.chang@gmail.com
 //   output: ggw****@gmail.com
 func (*Masker) Email(i string) string {
+	if len(i) == 0 {
+		return ""
+	}
+
 	tmp := strings.Split(i, "@")
 	addr := tmp[0]
 	domain := tmp[1]
@@ -185,6 +240,9 @@ func (*Masker) Email(i string) string {
 //   input: 0987654321
 //   output: 0987***321
 func (*Masker) Mobile(i string) string {
+	if len(i) == 0 {
+		return ""
+	}
 	return overlay(i, "***", 4, 7)
 }
 
@@ -194,6 +252,10 @@ func (*Masker) Mobile(i string) string {
 //   input: 0227993078
 //   output: (02)2799-****
 func (*Masker) Telephone(i string) string {
+	if len(i) == 0 {
+		return ""
+	}
+
 	i = strings.Replace(i, " ", "", -1)
 	i = strings.Replace(i, "(", "", -1)
 	i = strings.Replace(i, ")", "", -1)
@@ -223,6 +285,9 @@ func (*Masker) Telephone(i string) string {
 
 // Password always return `************`
 func (*Masker) Password(i string) string {
+	if len(i) == 0 {
+		return ""
+	}
 	return "************"
 }
 
@@ -271,6 +336,17 @@ func init() {
 //   }
 func Struct(s interface{}) (interface{}, error) {
 	return instance.Struct(s)
+}
+
+// String mask input string of the mask type
+//
+// Example:
+//
+//   masker.String(masker.MName, "ggwhite")
+//   masker.String(masker.MID, "A123456789")
+//   masker.String(masker.MMobile, "0987987987")
+func String(t mtype, i string) string {
+	return instance.String(t, i)
 }
 
 // Name mask the second world and the third world
