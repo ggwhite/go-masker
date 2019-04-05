@@ -150,7 +150,7 @@ func (m *Masker) String(t mtype, i string) string {
 	}
 }
 
-// Name mask the second world and the third world
+// Name mask the second letter and the third letter
 //
 // Example:
 //   input: ABCD
@@ -173,7 +173,7 @@ func (*Masker) Name(i string) string {
 	return "**"
 }
 
-// ID mask last 4 worlds of ID number
+// ID mask last 4 digits of ID number
 //
 // Example:
 //   input: A123456789
@@ -185,7 +185,7 @@ func (*Masker) ID(i string) string {
 	return overlay(i, "****", 6, 10)
 }
 
-// Address keep first 6 worlds, mask the overs
+// Address keep first 6 letters, mask the rest
 //
 // Example:
 //   input: 台北市內湖區內湖路一段737巷1號1樓
@@ -201,7 +201,7 @@ func (*Masker) Address(i string) string {
 	return overlay(i, "******", 6, math.MaxInt64)
 }
 
-// CreditCard mask middle 6 worlds from 7'th world
+// CreditCard mask 6 digits from the 7'th digit
 //
 // Example:
 //   input1: 1234567890123456 (VISA, JCB, MasterCard)(len = 16)
@@ -215,7 +215,7 @@ func (*Masker) CreditCard(i string) string {
 	return overlay(i, "******", 6, 12)
 }
 
-// Email keep domain and first 3 worlds
+// Email keep domain and the first 3 letters
 //
 // Example:
 //   input: ggw.chang@gmail.com
@@ -234,7 +234,7 @@ func (*Masker) Email(i string) string {
 	return addr + "@" + domain
 }
 
-// Mobile mask mobile 3 worlds from 4'th world
+// Mobile mask 3 digits from the 4'th digit
 //
 // Example:
 //   input: 0987654321
@@ -246,7 +246,7 @@ func (*Masker) Mobile(i string) string {
 	return overlay(i, "***", 4, 7)
 }
 
-// Telephone remove `(`, `)`, ` `, `-` chart, and mask last 4 worlds of telephone number, format to `(??)????-????`
+// Telephone remove "(", ")", " ", "-" chart, and mask last 4 digits of telephone number, format to "(??)????-????"
 //
 // Example:
 //   input: 0227993078
@@ -283,7 +283,7 @@ func (*Masker) Telephone(i string) string {
 	return ans
 }
 
-// Password always return `************`
+// Password always return "************"
 func (*Masker) Password(i string) string {
 	if len(i) == 0 {
 		return ""
@@ -349,7 +349,7 @@ func String(t mtype, i string) string {
 	return instance.String(t, i)
 }
 
-// Name mask the second world and the third world
+// Name mask the second letter and the third letter
 //
 // Example:
 //   input: ABCD
@@ -358,7 +358,7 @@ func Name(i string) string {
 	return instance.Name(i)
 }
 
-// ID mask last 4 worlds of ID number
+// ID mask last 4 digits of ID number
 //
 // Example:
 //   input: A123456789
@@ -367,7 +367,7 @@ func ID(i string) string {
 	return instance.ID(i)
 }
 
-// Address keep first 6 worlds, mask the overs
+// Address keep first 6 letters, mask the rest
 //
 // Example:
 //   input: 台北市內湖區內湖路一段737巷1號1樓
@@ -376,7 +376,7 @@ func Address(i string) string {
 	return instance.Address(i)
 }
 
-// CreditCard mask middle 6 worlds from 7'th world
+// CreditCard mask 6 digits from the 7'th digit
 //
 // Example:
 //   input1: 1234567890123456 (VISA, JCB, MasterCard)(len = 16)
@@ -387,7 +387,7 @@ func CreditCard(i string) string {
 	return instance.CreditCard(i)
 }
 
-// Email keep domain and first 3 worlds
+// Email keep domain and the first 3 letters
 //
 // Example:
 //   input: ggw.chang@gmail.com
@@ -396,7 +396,7 @@ func Email(i string) string {
 	return instance.Email(i)
 }
 
-// Mobile mask mobile 3 worlds from 4'th world
+// Mobile mask 3 digits from the 4'th digit
 //
 // Example:
 //   input: 0987654321
@@ -405,7 +405,7 @@ func Mobile(i string) string {
 	return instance.Mobile(i)
 }
 
-// Telephone remove `(`, `)`, ` `, `-` chart, and mask last 4 worlds of telephone number, format to `(??)????-????`
+// Telephone remove "(", ")", " ", "-" chart, and mask last 4 digits of telephone number, format to "(??)????-????"
 //
 // Example:
 //   input: 0227993078
@@ -414,7 +414,7 @@ func Telephone(i string) string {
 	return instance.Telephone(i)
 }
 
-// Password always return `************`
+// Password always return "************"
 func Password(i string) string {
 	return instance.Password(i)
 }

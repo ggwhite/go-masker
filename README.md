@@ -38,14 +38,14 @@ func main() {
 
 |Type        |Const        |Tag        |Description                                                                                            |
 |:----------:|:-----------:|:---------:|:------------------------------------------------------------------------------------------------------|
-|Name        |MName        |name       |mask the second letter and the third letter                                                              |
+|Name        |MName        |name       |mask the second letter and the third letter                                                            |
 |Password    |MPassword    |password   |always return `************`                                                                           |
 |Address     |MAddress     |addr       |keep first 6 letters, mask the rest                                                                    |
-|Email       |MEmail       |email      |keep domain and the first 3 letters                                                                         |
-|Mobile      |MMobile      |mobile     |mask 3 digits from the 4'th digit                                                                   |
+|Email       |MEmail       |email      |keep domain and the first 3 letters                                                                    |
+|Mobile      |MMobile      |mobile     |mask 3 digits from the 4'th digit                                                                      |
 |Telephone   |MTelephone   |tel        |remove `(`, `)`, ` `, `-` chart, and mask last 4 digits of telephone number, format to `(??)????-????` |
 |ID          |MID          |id         |mask last 4 digits of ID number                                                                        |
-|CreditCard  |MCreditCard  |credit     |mask 6 digits from the 7'th digit                                                                   |
+|CreditCard  |MCreditCard  |credit     |mask 6 digits from the 7'th digit                                                                      |
 |Struct      |MStruct      |struct     |mask the struct                                                                                        |
 
 ## Mask the `String`
