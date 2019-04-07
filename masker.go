@@ -307,6 +307,8 @@ func (m *Masker) Telephone(i string) string {
 	i = strings.Replace(i, ")", "", -1)
 	i = strings.Replace(i, "-", "", -1)
 
+	l = len([]rune(i))
+
 	if l != 10 && l != 8 {
 		return i
 	}
