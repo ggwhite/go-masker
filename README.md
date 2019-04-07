@@ -20,7 +20,7 @@ $ go get -u github.com/ggwhite/go-masker
 # Example
 
 Projects: 
-* [Gin Simple Log](https://github.com/ggwhite/go-masker/examples/gin-simple-log)
+* [Gin Simple Log](https://github.com/ggwhite/go-masker/tree/master/examples/gin-simple-log)
 
 ## Demo
 
