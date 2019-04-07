@@ -5,6 +5,96 @@ import (
 	"testing"
 )
 
+func TestMasker_overlay(t *testing.T) {
+	type args struct {
+		str     string
+		overlay string
+		start   int
+		end     int
+	}
+	tests := []struct {
+		name          string
+		m             *Masker
+		args          args
+		wantOverlayed string
+	}{
+		{
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				str:     "",
+				overlay: "*",
+				start:   0,
+				end:     0,
+			},
+			wantOverlayed: "",
+		},
+		{
+			name: "Happy Pass",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   1,
+				end:     5,
+			},
+			wantOverlayed: "a***fg",
+		},
+		{
+			name: "Start Less Than 0",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   -1,
+				end:     5,
+			},
+			wantOverlayed: "***fg",
+		},
+		{
+			name: "Start Greater Than Length",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   30,
+				end:     31,
+			},
+			wantOverlayed: "abcdefg***",
+		},
+		{
+			name: "End Less Than 0",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   1,
+				end:     -5,
+			},
+			wantOverlayed: "***bcdefg",
+		},
+		{
+			name: "Start Less Than End",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   5,
+				end:     1,
+			},
+			wantOverlayed: "a***fg",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Masker{}
+			if gotOverlayed := m.overlay(tt.args.str, tt.args.overlay, tt.args.start, tt.args.end); gotOverlayed != tt.wantOverlayed {
+				t.Errorf("Masker.overlay() = %v, want %v", gotOverlayed, tt.wantOverlayed)
+			}
+		})
+	}
+}
+
 func TestMasker_Name(t *testing.T) {
 	type args struct {
 		i string
@@ -16,7 +106,23 @@ func TestMasker_Name(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			m:    &Masker{},
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Chinese Length 1",
+			m:    &Masker{},
+			args: args{
+				i: "王",
+			},
+			want: "**",
+		},
+		{
+			name: "Chinese Length 2",
 			m:    &Masker{},
 			args: args{
 				i: "王蛋",
@@ -24,15 +130,15 @@ func TestMasker_Name(t *testing.T) {
 			want: "王**",
 		},
 		{
-			name: "B",
+			name: "Chinese Length 3",
 			m:    &Masker{},
 			args: args{
 				i: "王八蛋",
 			},
-			want: "王**",
+			want: "王**蛋",
 		},
 		{
-			name: "C",
+			name: "Chinese Length 4",
 			m:    &Masker{},
 			args: args{
 				i: "王七八蛋",
@@ -40,7 +146,7 @@ func TestMasker_Name(t *testing.T) {
 			want: "王**蛋",
 		},
 		{
-			name: "D",
+			name: "Chinese Length 5",
 			m:    &Masker{},
 			args: args{
 				i: "王七八九蛋",
@@ -48,7 +154,7 @@ func TestMasker_Name(t *testing.T) {
 			want: "王**九蛋",
 		},
 		{
-			name: "E",
+			name: "Chinese Length 6",
 			m:    &Masker{},
 			args: args{
 				i: "王七八九十蛋",
@@ -56,7 +162,7 @@ func TestMasker_Name(t *testing.T) {
 			want: "王**九十蛋",
 		},
 		{
-			name: "F",
+			name: "English Length 4",
 			m:    &Masker{},
 			args: args{
 				i: "Alen",
@@ -64,20 +170,20 @@ func TestMasker_Name(t *testing.T) {
 			want: "A**n",
 		},
 		{
-			name: "G",
+			name: "English Full Name",
 			m:    &Masker{},
 			args: args{
 				i: "Alen Lin",
 			},
-			want: "A**n Lin",
+			want: "A**n L**n",
 		},
 		{
-			name: "H",
+			name: "English Full Name",
 			m:    &Masker{},
 			args: args{
 				i: "Jorge Marry",
 			},
-			want: "J**ge Marry",
+			want: "J**ge M**ry",
 		},
 	}
 	for _, tt := range tests {
