@@ -8,6 +8,22 @@
 
 Golang Masker is a simple utility of creating a mask for sensitive information.
 
+* [Getting Started](#Getting-Started)
+* [Example](#Example)
+
+# Getting Started
+
+```
+$ go get -u github.com/ggwhite/go-masker
+```
+
+# Example
+
+Projects: 
+* [Gin Simple Log](https://github.com/ggwhite/go-masker/examples/gin-simple-log)
+
+## Demo
+
 There are two ways to get a masker instance:
 #### 1. Get a instance directly from go-masker package
 ``` golang
