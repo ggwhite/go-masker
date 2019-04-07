@@ -1,6 +1,7 @@
 # Golang Masker
 
 [![Build Status](https://travis-ci.org/ggwhite/go-masker.svg?branch=master)](https://travis-ci.org/ggwhite/go-masker)
+[![codecov](https://codecov.io/gh/ggwhite/go-masker/branch/master/graph/badge.svg)](https://codecov.io/gh/ggwhite/go-masker)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ggwhite/go-masker)](https://goreportcard.com/report/github.com/ggwhite/go-masker)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/ggwhite/go-masker/blob/master/LICENSE)
 [![GoDoc](https://godoc.org/github.com/ggwhite/go-masker?status.svg)](https://godoc.org/github.com/ggwhite/go-masker)
