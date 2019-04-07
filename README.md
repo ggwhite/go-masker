@@ -19,8 +19,7 @@ $ go get -u github.com/ggwhite/go-masker
 
 # Example
 
-Projects: 
-* [Gin Simple Log](https://github.com/ggwhite/go-masker/tree/master/examples/gin-simple-log)
+> Refrence: [go-masker-example](https://github.com/ggwhite/go-masker-example)
 
 ## Demo
 
