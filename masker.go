@@ -27,6 +27,39 @@ const (
 // Masker is a instance to marshal masked string
 type Masker struct{}
 
+func (m *Masker) overlay(str string, overlay string, start int, end int) (overlayed string) {
+	r := []rune(str)
+	l := len([]rune(r))
+
+	if l == 0 {
+		return ""
+	}
+
+	if start < 0 {
+		start = 0
+	}
+	if start > l {
+		start = l
+	}
+	if end < 0 {
+		end = 0
+	}
+	if end > l {
+		end = l
+	}
+	if start > end {
+		tmp := start
+		start = end
+		end = tmp
+	}
+
+	overlayed = ""
+	overlayed += string(r[:start])
+	overlayed += overlay
+	overlayed += string(r[end:])
+	return overlayed
+}
+
 // Struct must input a interface{}, add tag mask on struct fields, after Struct(), return a pointer interface{} of input type and it will be masked with the tag format type
 //
 // Example:
@@ -155,19 +188,28 @@ func (m *Masker) String(t mtype, i string) string {
 // Example:
 //   input: ABCD
 //   output: A**D
-func (*Masker) Name(i string) string {
-	l := len(i)
+func (m *Masker) Name(i string) string {
+	l := len([]rune(i))
 
 	if l == 0 {
 		return ""
 	}
 
+	// if has space
+	if strs := strings.Split(i, " "); len(strs) > 1 {
+		tmp := make([]string, len(strs))
+		for idx, str := range strs {
+			tmp[idx] = m.Name(str)
+		}
+		return strings.Join(tmp, " ")
+	}
+
 	if l == 2 || l == 3 {
-		return overlay(i, "**", 1, 2)
+		return m.overlay(i, "**", 1, 2)
 	}
 
 	if l > 3 {
-		return overlay(i, "**", 1, 3)
+		return m.overlay(i, "**", 1, 3)
 	}
 
 	return "**"
@@ -178,11 +220,12 @@ func (*Masker) Name(i string) string {
 // Example:
 //   input: A123456789
 //   output: A12345****
-func (*Masker) ID(i string) string {
-	if len(i) == 0 {
+func (m *Masker) ID(i string) string {
+	l := len([]rune(i))
+	if l == 0 {
 		return ""
 	}
-	return overlay(i, "****", 6, 10)
+	return m.overlay(i, "****", 6, 10)
 }
 
 // Address keep first 6 letters, mask the rest
@@ -190,15 +233,15 @@ func (*Masker) ID(i string) string {
 // Example:
 //   input: 台北市內湖區內湖路一段737巷1號1樓
 //   output: 台北市內湖區******
-func (*Masker) Address(i string) string {
-	l := len(i)
+func (m *Masker) Address(i string) string {
+	l := len([]rune(i))
 	if l == 0 {
 		return ""
 	}
 	if l <= 6 {
 		return "******"
 	}
-	return overlay(i, "******", 6, math.MaxInt64)
+	return m.overlay(i, "******", 6, math.MaxInt64)
 }
 
 // CreditCard mask 6 digits from the 7'th digit
@@ -208,11 +251,12 @@ func (*Masker) Address(i string) string {
 //   output1: 123456******3456
 //   input2: 123456789012345` (American Express)(len = 15)
 //   output2: 123456******345`
-func (*Masker) CreditCard(i string) string {
-	if len(i) == 0 {
+func (m *Masker) CreditCard(i string) string {
+	l := len([]rune(i))
+	if l == 0 {
 		return ""
 	}
-	return overlay(i, "******", 6, 12)
+	return m.overlay(i, "******", 6, 12)
 }
 
 // Email keep domain and the first 3 letters
@@ -220,8 +264,9 @@ func (*Masker) CreditCard(i string) string {
 // Example:
 //   input: ggw.chang@gmail.com
 //   output: ggw****@gmail.com
-func (*Masker) Email(i string) string {
-	if len(i) == 0 {
+func (m *Masker) Email(i string) string {
+	l := len([]rune(i))
+	if l == 0 {
 		return ""
 	}
 
@@ -229,7 +274,7 @@ func (*Masker) Email(i string) string {
 	addr := tmp[0]
 	domain := tmp[1]
 
-	addr = overlay(addr, "****", 3, 7)
+	addr = m.overlay(addr, "****", 3, 7)
 
 	return addr + "@" + domain
 }
@@ -239,11 +284,11 @@ func (*Masker) Email(i string) string {
 // Example:
 //   input: 0987654321
 //   output: 0987***321
-func (*Masker) Mobile(i string) string {
+func (m *Masker) Mobile(i string) string {
 	if len(i) == 0 {
 		return ""
 	}
-	return overlay(i, "***", 4, 7)
+	return m.overlay(i, "***", 4, 7)
 }
 
 // Telephone remove "(", ")", " ", "-" chart, and mask last 4 digits of telephone number, format to "(??)????-????"
@@ -251,8 +296,9 @@ func (*Masker) Mobile(i string) string {
 // Example:
 //   input: 0227993078
 //   output: (02)2799-****
-func (*Masker) Telephone(i string) string {
-	if len(i) == 0 {
+func (m *Masker) Telephone(i string) string {
+	l := len([]rune(i))
+	if l == 0 {
 		return ""
 	}
 
@@ -261,7 +307,7 @@ func (*Masker) Telephone(i string) string {
 	i = strings.Replace(i, ")", "", -1)
 	i = strings.Replace(i, "-", "", -1)
 
-	l := len(i)
+	l = len([]rune(i))
 
 	if l != 10 && l != 8 {
 		return i
@@ -284,8 +330,9 @@ func (*Masker) Telephone(i string) string {
 }
 
 // Password always return "************"
-func (*Masker) Password(i string) string {
-	if len(i) == 0 {
+func (m *Masker) Password(i string) string {
+	l := len([]rune(i))
+	if l == 0 {
 		return ""
 	}
 	return "************"

@@ -5,6 +5,199 @@ import (
 	"testing"
 )
 
+func TestMasker_overlay(t *testing.T) {
+	type args struct {
+		str     string
+		overlay string
+		start   int
+		end     int
+	}
+	tests := []struct {
+		name          string
+		m             *Masker
+		args          args
+		wantOverlayed string
+	}{
+		{
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				str:     "",
+				overlay: "*",
+				start:   0,
+				end:     0,
+			},
+			wantOverlayed: "",
+		},
+		{
+			name: "Happy Pass",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   1,
+				end:     5,
+			},
+			wantOverlayed: "a***fg",
+		},
+		{
+			name: "Start Less Than 0",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   -1,
+				end:     5,
+			},
+			wantOverlayed: "***fg",
+		},
+		{
+			name: "Start Greater Than Length",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   30,
+				end:     31,
+			},
+			wantOverlayed: "abcdefg***",
+		},
+		{
+			name: "End Less Than 0",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   1,
+				end:     -5,
+			},
+			wantOverlayed: "***bcdefg",
+		},
+		{
+			name: "Start Less Than End",
+			m:    New(),
+			args: args{
+				str:     "abcdefg",
+				overlay: "***",
+				start:   5,
+				end:     1,
+			},
+			wantOverlayed: "a***fg",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Masker{}
+			if gotOverlayed := m.overlay(tt.args.str, tt.args.overlay, tt.args.start, tt.args.end); gotOverlayed != tt.wantOverlayed {
+				t.Errorf("Masker.overlay() = %v, want %v", gotOverlayed, tt.wantOverlayed)
+			}
+		})
+	}
+}
+
+func TestMasker_String(t *testing.T) {
+	type args struct {
+		t mtype
+		i string
+	}
+	tests := []struct {
+		name string
+		m    *Masker
+		args args
+		want string
+	}{
+		{
+			name: "Error Mask Type",
+			m:    New(),
+			args: args{
+				t: mtype(""),
+				i: "abcdefg",
+			},
+			want: "abcdefg",
+		},
+		{
+			name: "Password",
+			m:    New(),
+			args: args{
+				t: MPassword,
+				i: "ggwhite",
+			},
+			want: "************",
+		},
+		{
+			name: "Name",
+			m:    New(),
+			args: args{
+				t: MName,
+				i: "ggwhite",
+			},
+			want: "g**hite",
+		},
+		{
+			name: "Address",
+			m:    New(),
+			args: args{
+				t: MAddress,
+				i: "台北市大安區敦化南路五段7788號378樓",
+			},
+			want: "台北市大安區******",
+		},
+		{
+			name: "Email",
+			m:    New(),
+			args: args{
+				t: MEmail,
+				i: "ggw.chang@gmail.com",
+			},
+			want: "ggw****ng@gmail.com",
+		},
+		{
+			name: "Mobile",
+			m:    New(),
+			args: args{
+				t: MMobile,
+				i: "0978978978",
+			},
+			want: "0978***978",
+		},
+		{
+			name: "ID",
+			m:    New(),
+			args: args{
+				t: MID,
+				i: "A123456789",
+			},
+			want: "A12345****",
+		},
+		{
+			name: "Telephone",
+			m:    New(),
+			args: args{
+				t: MTelephone,
+				i: "0288889999",
+			},
+			want: "(02)8888-****",
+		},
+		{
+			name: "CreditCard",
+			m:    New(),
+			args: args{
+				t: MCreditCard,
+				i: "1234567890123456",
+			},
+			want: "123456******3456",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Masker{}
+			if got := m.String(tt.args.t, tt.args.i); got != tt.want {
+				t.Errorf("Masker.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestMasker_Name(t *testing.T) {
 	type args struct {
 		i string
@@ -16,68 +209,84 @@ func TestMasker_Name(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Chinese Length 1",
+			m:    New(),
+			args: args{
+				i: "王",
+			},
+			want: "**",
+		},
+		{
+			name: "Chinese Length 2",
+			m:    New(),
 			args: args{
 				i: "王蛋",
 			},
 			want: "王**",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "Chinese Length 3",
+			m:    New(),
 			args: args{
 				i: "王八蛋",
 			},
-			want: "王**",
+			want: "王**蛋",
 		},
 		{
-			name: "C",
-			m:    &Masker{},
+			name: "Chinese Length 4",
+			m:    New(),
 			args: args{
 				i: "王七八蛋",
 			},
 			want: "王**蛋",
 		},
 		{
-			name: "D",
-			m:    &Masker{},
+			name: "Chinese Length 5",
+			m:    New(),
 			args: args{
 				i: "王七八九蛋",
 			},
 			want: "王**九蛋",
 		},
 		{
-			name: "E",
-			m:    &Masker{},
+			name: "Chinese Length 6",
+			m:    New(),
 			args: args{
 				i: "王七八九十蛋",
 			},
 			want: "王**九十蛋",
 		},
 		{
-			name: "F",
-			m:    &Masker{},
+			name: "English Length 4",
+			m:    New(),
 			args: args{
 				i: "Alen",
 			},
 			want: "A**n",
 		},
 		{
-			name: "G",
-			m:    &Masker{},
+			name: "English Full Name",
+			m:    New(),
 			args: args{
 				i: "Alen Lin",
 			},
-			want: "A**n Lin",
+			want: "A**n L**n",
 		},
 		{
-			name: "H",
-			m:    &Masker{},
+			name: "English Full Name",
+			m:    New(),
 			args: args{
 				i: "Jorge Marry",
 			},
-			want: "J**ge Marry",
+			want: "J**ge M**ry",
 		},
 	}
 	for _, tt := range tests {
@@ -100,28 +309,44 @@ func TestMasker_ID(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "A123456789",
 			},
 			want: "A12345****",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "Length Less Than 6",
+			m:    New(),
 			args: args{
 				i: "A12",
 			},
 			want: "A12****",
 		},
 		{
-			name: "C",
-			m:    &Masker{},
+			name: "Length Less Than 6",
+			m:    New(),
 			args: args{
 				i: "A",
 			},
 			want: "A****",
+		},
+		{
+			name: "Length Between 6 and 10",
+			m:    New(),
+			args: args{
+				i: "A123456",
+			},
+			want: "A12345****",
 		},
 	}
 	for _, tt := range tests {
@@ -144,20 +369,28 @@ func TestMasker_Address(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "台北市大安區敦化南路五段7788號378樓",
 			},
 			want: "台北市大安區******",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "Length Less Than 6",
+			m:    New(),
 			args: args{
 				i: "台北市",
 			},
-			want: "台北市******",
+			want: "******",
 		},
 	}
 	for _, tt := range tests {
@@ -180,16 +413,24 @@ func TestMasker_CreditCard(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "VISA JCB MasterCard",
+			m:    New(),
 			args: args{
 				i: "1234567890123456",
 			},
 			want: "123456******3456",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "American Express",
+			m:    New(),
 			args: args{
 				i: "123456789012345",
 			},
@@ -216,28 +457,28 @@ func TestMasker_Email(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "ggw.chang@gmail.com",
 			},
 			want: "ggw****ng@gmail.com",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "Address Less Than 3",
+			m:    New(),
 			args: args{
 				i: "qq@gmail.com",
 			},
 			want: "qq****@gmail.com",
-		},
-		{
-			name: "C",
-			m:    &Masker{},
-			args: args{
-				i: "qqabcd@yahoo.com.tw",
-			},
-			want: "qqa****@yahoo.com.tw",
 		},
 	}
 	for _, tt := range tests {
@@ -260,16 +501,24 @@ func TestMasker_Mobile(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "0978978978",
 			},
 			want: "0978***978",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "0912345678",
 			},
@@ -296,28 +545,44 @@ func TestMasker_Telephone(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "With Special Chart",
+			m:    New(),
 			args: args{
 				i: "(02-)27   99-3--078",
 			},
 			want: "(02)2799-****",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "0227993078",
 			},
 			want: "(02)2799-****",
 		},
 		{
-			name: "C",
-			m:    &Masker{},
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "0788079966",
 			},
 			want: "(07)8807-****",
+		},
+		{
+			name: "Length Not Eq 8 or 10",
+			m:    New(),
+			args: args{
+				i: "2349966",
+			},
+			want: "2349966",
 		},
 	}
 	for _, tt := range tests {
@@ -340,16 +605,24 @@ func TestMasker_Password(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
-			m:    &Masker{},
+			name: "Empty Input",
+			m:    New(),
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "1234567",
 			},
 			want: "************",
 		},
 		{
-			name: "B",
-			m:    &Masker{},
+			name: "Happy Pass",
+			m:    New(),
 			args: args{
 				i: "abcd!@#$%321",
 			},
@@ -384,6 +657,98 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestString(t *testing.T) {
+	type args struct {
+		t mtype
+		i string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Error Mask Type",
+			args: args{
+				t: mtype(""),
+				i: "abcdefg",
+			},
+			want: "abcdefg",
+		},
+		{
+			name: "Password",
+			args: args{
+				t: MPassword,
+				i: "ggwhite",
+			},
+			want: "************",
+		},
+		{
+			name: "Name",
+			args: args{
+				t: MName,
+				i: "ggwhite",
+			},
+			want: "g**hite",
+		},
+		{
+			name: "Address",
+			args: args{
+				t: MAddress,
+				i: "台北市大安區敦化南路五段7788號378樓",
+			},
+			want: "台北市大安區******",
+		},
+		{
+			name: "Email",
+			args: args{
+				t: MEmail,
+				i: "ggw.chang@gmail.com",
+			},
+			want: "ggw****ng@gmail.com",
+		},
+		{
+			name: "Mobile",
+			args: args{
+				t: MMobile,
+				i: "0978978978",
+			},
+			want: "0978***978",
+		},
+		{
+			name: "ID",
+			args: args{
+				t: MID,
+				i: "A123456789",
+			},
+			want: "A12345****",
+		},
+		{
+			name: "Telephone",
+			args: args{
+				t: MTelephone,
+				i: "0288889999",
+			},
+			want: "(02)8888-****",
+		},
+		{
+			name: "CreditCard",
+			args: args{
+				t: MCreditCard,
+				i: "1234567890123456",
+			},
+			want: "123456******3456",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := String(tt.args.t, tt.args.i); got != tt.want {
+				t.Errorf("String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestName(t *testing.T) {
 	type args struct {
 		i string
@@ -394,60 +759,74 @@ func TestName(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Chinese Length 1",
+			args: args{
+				i: "王",
+			},
+			want: "**",
+		},
+		{
+			name: "Chinese Length 2",
 			args: args{
 				i: "王蛋",
 			},
 			want: "王**",
 		},
 		{
-			name: "B",
+			name: "Chinese Length 3",
 			args: args{
 				i: "王八蛋",
 			},
-			want: "王**",
+			want: "王**蛋",
 		},
 		{
-			name: "C",
+			name: "Chinese Length 4",
 			args: args{
 				i: "王七八蛋",
 			},
 			want: "王**蛋",
 		},
 		{
-			name: "D",
+			name: "Chinese Length 5",
 			args: args{
 				i: "王七八九蛋",
 			},
 			want: "王**九蛋",
 		},
 		{
-			name: "E",
+			name: "Chinese Length 6",
 			args: args{
 				i: "王七八九十蛋",
 			},
 			want: "王**九十蛋",
 		},
 		{
-			name: "F",
+			name: "English Length 4",
 			args: args{
 				i: "Alen",
 			},
 			want: "A**n",
 		},
 		{
-			name: "G",
+			name: "English Full Name",
 			args: args{
 				i: "Alen Lin",
 			},
-			want: "A**n Lin",
+			want: "A**n L**n",
 		},
 		{
-			name: "H",
+			name: "English Full Name",
 			args: args{
 				i: "Jorge Marry",
 			},
-			want: "J**ge Marry",
+			want: "J**ge M**ry",
 		},
 	}
 	for _, tt := range tests {
@@ -469,25 +848,39 @@ func TestID(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
 			args: args{
 				i: "A123456789",
 			},
 			want: "A12345****",
 		},
 		{
-			name: "B",
+			name: "Length Less Than 6",
 			args: args{
 				i: "A12",
 			},
 			want: "A12****",
 		},
 		{
-			name: "C",
+			name: "Length Less Than 6",
 			args: args{
 				i: "A",
 			},
 			want: "A****",
+		},
+		{
+			name: "Length Between 6 and 10",
+			args: args{
+				i: "A123456",
+			},
+			want: "A12345****",
 		},
 	}
 	for _, tt := range tests {
@@ -509,18 +902,25 @@ func TestAddress(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
 			args: args{
 				i: "台北市大安區敦化南路五段7788號378樓",
 			},
 			want: "台北市大安區******",
 		},
 		{
-			name: "B",
+			name: "Length Less Than 6",
 			args: args{
 				i: "台北市",
 			},
-			want: "台北市******",
+			want: "******",
 		},
 	}
 	for _, tt := range tests {
@@ -542,14 +942,21 @@ func TestCreditCard(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "VISA JCB MasterCard",
 			args: args{
 				i: "1234567890123456",
 			},
 			want: "123456******3456",
 		},
 		{
-			name: "B",
+			name: "American Express",
 			args: args{
 				i: "123456789012345",
 			},
@@ -575,25 +982,25 @@ func TestEmail(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
 			args: args{
 				i: "ggw.chang@gmail.com",
 			},
 			want: "ggw****ng@gmail.com",
 		},
 		{
-			name: "B",
+			name: "Address Less Than 3",
 			args: args{
 				i: "qq@gmail.com",
 			},
 			want: "qq****@gmail.com",
-		},
-		{
-			name: "C",
-			args: args{
-				i: "qqabcd@yahoo.com.tw",
-			},
-			want: "qqa****@yahoo.com.tw",
 		},
 	}
 	for _, tt := range tests {
@@ -615,14 +1022,21 @@ func TestMobile(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
 			args: args{
 				i: "0978978978",
 			},
 			want: "0978***978",
 		},
 		{
-			name: "B",
+			name: "Happy Pass",
 			args: args{
 				i: "0912345678",
 			},
@@ -648,21 +1062,28 @@ func TestTelephone(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "With Special Chart",
 			args: args{
 				i: "(02-)27   99-3--078",
 			},
 			want: "(02)2799-****",
 		},
 		{
-			name: "B",
+			name: "Happy Pass",
 			args: args{
 				i: "0227993078",
 			},
 			want: "(02)2799-****",
 		},
 		{
-			name: "C",
+			name: "Happy Pass",
 			args: args{
 				i: "0788079966",
 			},
@@ -688,14 +1109,21 @@ func TestPassword(t *testing.T) {
 		want string
 	}{
 		{
-			name: "A",
+			name: "Empty Input",
+			args: args{
+				i: "",
+			},
+			want: "",
+		},
+		{
+			name: "Happy Pass",
 			args: args{
 				i: "1234567",
 			},
 			want: "************",
 		},
 		{
-			name: "B",
+			name: "Happy Pass",
 			args: args{
 				i: "abcd!@#$%321",
 			},
