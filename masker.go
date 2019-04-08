@@ -2,6 +2,7 @@
 package masker
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"strings"
@@ -95,6 +96,10 @@ func (m *Masker) overlay(str string, overlay string, start int, end int) (overla
 //       fmt.Println(t.(*Foo))
 //   }
 func (m *Masker) Struct(s interface{}) (interface{}, error) {
+	if s == nil {
+		return nil, fmt.Errorf("input is nil")
+	}
+
 	var selem, tptr reflect.Value
 
 	st := reflect.TypeOf(s)
@@ -134,19 +139,44 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
 			}
 		case reflect.Slice:
-			if len(mtag) == 0 {
+			if selem.Field(i).IsNil() {
 				continue
 			}
-			if selem.Field(i).Type().Elem().Kind() != reflect.String {
+			if len(mtag) == 0 {
 				tptr.Elem().Field(i).Set(selem.Field(i))
 				continue
 			}
-			orgval := selem.Field(i).Interface().([]string)
-			newval := make([]string, len(orgval))
-			for i, val := range selem.Field(i).Interface().([]string) {
-				newval[i] = m.String(mtype(mtag), val)
+			if selem.Field(i).Type().Elem().Kind() == reflect.String {
+				orgval := selem.Field(i).Interface().([]string)
+				newval := make([]string, len(orgval))
+				for i, val := range selem.Field(i).Interface().([]string) {
+					newval[i] = m.String(mtype(mtag), val)
+				}
+				tptr.Elem().Field(i).Set(reflect.ValueOf(newval))
+				continue
 			}
-			tptr.Elem().Field(i).Set(reflect.ValueOf(newval))
+			if selem.Field(i).Type().Elem().Kind() == reflect.Struct && mtype(mtag) == MStruct {
+				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
+				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
+					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
+					if err != nil {
+						return nil, err
+					}
+					newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
+				}
+				tptr.Elem().Field(i).Set(newval)
+			}
+			if selem.Field(i).Type().Elem().Kind() == reflect.Ptr && mtype(mtag) == MStruct {
+				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
+				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
+					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
+					if err != nil {
+						return nil, err
+					}
+					newval = reflect.Append(newval, reflect.ValueOf(_n))
+				}
+				tptr.Elem().Field(i).Set(newval)
+			}
 		}
 	}
 
