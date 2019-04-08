@@ -1138,3 +1138,570 @@ func TestPassword(t *testing.T) {
 		})
 	}
 }
+
+func TestMasker_Struct(t *testing.T) {
+	type User struct {
+		Name       string `mask:"name"`
+		IDNbr      string `mask:"id"`
+		Mobile     string `mask:"mobile"`
+		Email      string `mask:"email"`
+		Address    string `mask:"addr"`
+		Telephone  string `mask:"tel"`
+		Password   string `mask:"password"`
+		CreditCard string `mask:"credit"`
+	}
+	type Boss struct {
+		Mobiles []string `mask:"mobile"`
+	}
+	type Person struct {
+		Name   string    `mask:"name"`
+		Father *Person   `mask:"struct"`
+		Mother *Person   `mask:"struct"`
+		Kids   []Person  `mask:"struct"`
+		Kids2  []*Person `mask:"struct"`
+		User   User      `mask:"struct"`
+	}
+	type Account struct {
+		Emails  []string
+		Bossies []*Boss
+	}
+
+	type args struct {
+		s interface{}
+	}
+	tests := []struct {
+		name    string
+		m       *Masker
+		args    args
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "Nil Input",
+			m:    New(),
+			args: args{
+				s: nil,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "String Fields",
+			m:    New(),
+			args: args{
+				s: &User{
+					Name:       "ggwhite",
+					IDNbr:      "A123456789",
+					Mobile:     "0987987987",
+					Email:      "ggw.chang@gmail.com",
+					Address:    "台北市大安區敦化南路五段7788號378樓",
+					Telephone:  "0227993078",
+					Password:   "abcde",
+					CreditCard: "1234567890987654",
+				},
+			},
+			want: &User{
+				Name:       "g**hite",
+				IDNbr:      "A12345****",
+				Mobile:     "0987***987",
+				Email:      "ggw****ng@gmail.com",
+				Address:    "台北市大安區******",
+				Telephone:  "(02)2799-****",
+				Password:   "************",
+				CreditCard: "123456******7654",
+			},
+			wantErr: false,
+		},
+		{
+			name: "String Slice",
+			m:    New(),
+			args: args{
+				s: &Boss{
+					Mobiles: []string{
+						"0978978978",
+						"0987987987",
+					},
+				},
+			},
+			want: &Boss{
+				Mobiles: []string{
+					"0978***978",
+					"0987***987",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Empty Slice",
+			m:    New(),
+			args: args{
+				s: &Boss{
+					Mobiles: []string{},
+				},
+			},
+			want: &Boss{
+				Mobiles: []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Nil Slice",
+			m:    New(),
+			args: args{
+				s: &Boss{},
+			},
+			want:    &Boss{},
+			wantErr: false,
+		},
+		{
+			name: "Struct of Struct",
+			m:    New(),
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					Father: &Person{
+						Name: "Jorge",
+					},
+					Mother: &Person{
+						Name: "Marry",
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				Father: &Person{
+					Name: "J**ge",
+				},
+				Mother: &Person{
+					Name: "M**ry",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct Slice",
+			m:    New(),
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					Kids: []Person{
+						Person{
+							Name: "Beca",
+						},
+						Person{
+							Name: "Randy",
+						},
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				Kids: []Person{
+					Person{
+						Name: "B**a",
+					},
+					Person{
+						Name: "R**dy",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct Ponter Slice",
+			m:    New(),
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					Kids2: []*Person{
+						&Person{
+							Name: "Beca",
+						},
+						&Person{
+							Name: "Randy",
+						},
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				Kids2: []*Person{
+					&Person{
+						Name: "B**a",
+					},
+					&Person{
+						Name: "R**dy",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct non Ponter Struct",
+			m:    New(),
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					User: User{
+						Name: "Beca",
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				User: User{
+					Name: "B**a",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Slice without tag",
+			m:    New(),
+			args: args{
+				s: &Account{
+					Emails: []string{
+						"A@gmail.com",
+						"B@gmail.com",
+					},
+				},
+			},
+			want: &Account{
+				Emails: []string{
+					"A@gmail.com",
+					"B@gmail.com",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct Slice without tag",
+			m:    New(),
+			args: args{
+				s: &Account{
+					Bossies: []*Boss{
+						&Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+						&Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+					},
+				},
+			},
+			want: &Account{
+				Bossies: []*Boss{
+					&Boss{
+						Mobiles: []string{
+							"0987987987",
+							"0978978978",
+						},
+					},
+					&Boss{
+						Mobiles: []string{
+							"0987987987",
+							"0978978978",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Masker{}
+			got, err := m.Struct(tt.args.s)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Masker.Struct() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Masker.Struct() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStruct(t *testing.T) {
+	type User struct {
+		Name       string `mask:"name"`
+		IDNbr      string `mask:"id"`
+		Mobile     string `mask:"mobile"`
+		Email      string `mask:"email"`
+		Address    string `mask:"addr"`
+		Telephone  string `mask:"tel"`
+		Password   string `mask:"password"`
+		CreditCard string `mask:"credit"`
+	}
+	type Boss struct {
+		Mobiles []string `mask:"mobile"`
+	}
+	type Person struct {
+		Name   string    `mask:"name"`
+		Father *Person   `mask:"struct"`
+		Mother *Person   `mask:"struct"`
+		Kids   []Person  `mask:"struct"`
+		Kids2  []*Person `mask:"struct"`
+		User   User      `mask:"struct"`
+	}
+	type Account struct {
+		Emails  []string
+		Bossies []*Boss
+	}
+
+	type args struct {
+		s interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "Nil Input",
+			args: args{
+				s: nil,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "String Fields",
+			args: args{
+				s: &User{
+					Name:       "ggwhite",
+					IDNbr:      "A123456789",
+					Mobile:     "0987987987",
+					Email:      "ggw.chang@gmail.com",
+					Address:    "台北市大安區敦化南路五段7788號378樓",
+					Telephone:  "0227993078",
+					Password:   "abcde",
+					CreditCard: "1234567890987654",
+				},
+			},
+			want: &User{
+				Name:       "g**hite",
+				IDNbr:      "A12345****",
+				Mobile:     "0987***987",
+				Email:      "ggw****ng@gmail.com",
+				Address:    "台北市大安區******",
+				Telephone:  "(02)2799-****",
+				Password:   "************",
+				CreditCard: "123456******7654",
+			},
+			wantErr: false,
+		},
+		{
+			name: "String Slice",
+			args: args{
+				s: &Boss{
+					Mobiles: []string{
+						"0978978978",
+						"0987987987",
+					},
+				},
+			},
+			want: &Boss{
+				Mobiles: []string{
+					"0978***978",
+					"0987***987",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Empty Slice",
+			args: args{
+				s: &Boss{
+					Mobiles: []string{},
+				},
+			},
+			want: &Boss{
+				Mobiles: []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Nil Slice",
+			args: args{
+				s: &Boss{},
+			},
+			want:    &Boss{},
+			wantErr: false,
+		},
+		{
+			name: "Struct of Struct",
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					Father: &Person{
+						Name: "Jorge",
+					},
+					Mother: &Person{
+						Name: "Marry",
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				Father: &Person{
+					Name: "J**ge",
+				},
+				Mother: &Person{
+					Name: "M**ry",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct Slice",
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					Kids: []Person{
+						Person{
+							Name: "Beca",
+						},
+						Person{
+							Name: "Randy",
+						},
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				Kids: []Person{
+					Person{
+						Name: "B**a",
+					},
+					Person{
+						Name: "R**dy",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct Ponter Slice",
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					Kids2: []*Person{
+						&Person{
+							Name: "Beca",
+						},
+						&Person{
+							Name: "Randy",
+						},
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				Kids2: []*Person{
+					&Person{
+						Name: "B**a",
+					},
+					&Person{
+						Name: "R**dy",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct non Ponter Struct",
+			args: args{
+				s: &Person{
+					Name: "Jack",
+					User: User{
+						Name: "Beca",
+					},
+				},
+			},
+			want: &Person{
+				Name: "J**k",
+				User: User{
+					Name: "B**a",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Slice without tag",
+			args: args{
+				s: &Account{
+					Emails: []string{
+						"A@gmail.com",
+						"B@gmail.com",
+					},
+				},
+			},
+			want: &Account{
+				Emails: []string{
+					"A@gmail.com",
+					"B@gmail.com",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct Slice without tag",
+			args: args{
+				s: &Account{
+					Bossies: []*Boss{
+						&Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+						&Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+					},
+				},
+			},
+			want: &Account{
+				Bossies: []*Boss{
+					&Boss{
+						Mobiles: []string{
+							"0987987987",
+							"0978978978",
+						},
+					},
+					&Boss{
+						Mobiles: []string{
+							"0987987987",
+							"0978978978",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Struct(tt.args.s)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Struct() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Struct() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
