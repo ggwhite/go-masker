@@ -1165,6 +1165,7 @@ func TestMasker_Struct(t *testing.T) {
 	type Account struct {
 		Emails  []string
 		Bossies []*Boss
+		Father  interface{} `mask:"struct"`
 	}
 
 	type args struct {
@@ -1426,6 +1427,29 @@ func TestMasker_Struct(t *testing.T) {
 							"0987987987",
 							"0978978978",
 						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Interface",
+			m:    New(),
+			args: args{
+				s: &Account{
+					Father: &Boss{
+						Mobiles: []string{
+							"0987987987",
+							"0978978978",
+						},
+					},
+				},
+			},
+			want: &Account{
+				Father: &Boss{
+					Mobiles: []string{
+						"0987***987",
+						"0978***978",
 					},
 				},
 			},
