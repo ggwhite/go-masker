@@ -1152,6 +1152,7 @@ func TestMasker_Struct(t *testing.T) {
 	}
 	type Boss struct {
 		Mobiles []string `mask:"mobile"`
+		Count   int      `mask:"nnnn"`
 	}
 	type Person struct {
 		Name        string    `mask:"name"`
@@ -1165,7 +1166,8 @@ func TestMasker_Struct(t *testing.T) {
 	type Account struct {
 		Emails  []string
 		Bossies []*Boss
-		Father  interface{} `mask:"struct"`
+		Father  interface{}   `mask:"struct"`
+		Mothers []interface{} `mask:"struct"`
 	}
 
 	type args struct {
@@ -1452,6 +1454,120 @@ func TestMasker_Struct(t *testing.T) {
 						"0978***978",
 					},
 				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Interface",
+			m:    New(),
+			args: args{
+				s: &Account{
+					Father: Boss{
+						Mobiles: []string{
+							"0987987987",
+							"0978978978",
+						},
+					},
+				},
+			},
+			want: &Account{
+				Father: Boss{
+					Mobiles: []string{
+						"0987***987",
+						"0978***978",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Interface Slice",
+			m:    New(),
+			args: args{
+				s: &Account{
+					Mothers: []interface{}{
+						&Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+						&Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+					},
+				},
+			},
+			want: &Account{
+				Mothers: []interface{}{
+					&Boss{
+						Mobiles: []string{
+							"0987***987",
+							"0978***978",
+						},
+					},
+					&Boss{
+						Mobiles: []string{
+							"0987***987",
+							"0978***978",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Interface Slice",
+			m:    New(),
+			args: args{
+				s: &Account{
+					Mothers: []interface{}{
+						Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+						&Boss{
+							Mobiles: []string{
+								"0987987987",
+								"0978978978",
+							},
+						},
+					},
+				},
+			},
+			want: &Account{
+				Mothers: []interface{}{
+					Boss{
+						Mobiles: []string{
+							"0987***987",
+							"0978***978",
+						},
+					},
+					&Boss{
+						Mobiles: []string{
+							"0987***987",
+							"0978***978",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Default Type",
+			m:    New(),
+			args: args{
+				s: &Boss{
+					Count: 123,
+				},
+			},
+			want: &Boss{
+				Count: 123,
 			},
 			wantErr: false,
 		},
