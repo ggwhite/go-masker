@@ -114,6 +114,10 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 
 	for i := 0; i < selem.NumField(); i++ {
 		mtag := selem.Type().Field(i).Tag.Get(tagName)
+		if len(mtag) == 0 {
+			tptr.Elem().Field(i).Set(selem.Field(i))
+			continue
+		}
 		switch selem.Field(i).Type().Kind() {
 		default:
 			tptr.Elem().Field(i).Set(selem.Field(i))
@@ -140,10 +144,6 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 			}
 		case reflect.Slice:
 			if selem.Field(i).IsNil() {
-				continue
-			}
-			if len(mtag) == 0 {
-				tptr.Elem().Field(i).Set(selem.Field(i))
 				continue
 			}
 			if selem.Field(i).Type().Elem().Kind() == reflect.String {
