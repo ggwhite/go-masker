@@ -177,6 +177,15 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 				}
 				tptr.Elem().Field(i).Set(newval)
 			}
+		case reflect.Interface:
+			if selem.Field(i).IsNil() {
+				continue
+			}
+			_t, err := m.Struct(selem.Field(i).Interface())
+			if err != nil {
+				return nil, err
+			}
+			tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
 		}
 	}
 
