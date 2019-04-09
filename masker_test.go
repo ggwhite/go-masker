@@ -1152,6 +1152,7 @@ func TestMasker_Struct(t *testing.T) {
 	}
 	type Boss struct {
 		Mobiles []string `mask:"mobile"`
+		Count   int      `mask:"nnnn"`
 	}
 	type Person struct {
 		Name        string    `mask:"name"`
@@ -1554,6 +1555,19 @@ func TestMasker_Struct(t *testing.T) {
 						},
 					},
 				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Default Type",
+			m:    New(),
+			args: args{
+				s: &Boss{
+					Count: 123,
+				},
+			},
+			want: &Boss{
+				Count: 123,
 			},
 			wantErr: false,
 		},
