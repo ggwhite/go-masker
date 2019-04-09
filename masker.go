@@ -165,6 +165,7 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 					newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
 				}
 				tptr.Elem().Field(i).Set(newval)
+				continue
 			}
 			if selem.Field(i).Type().Elem().Kind() == reflect.Ptr && mtype(mtag) == MStruct {
 				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
@@ -176,16 +177,40 @@ func (m *Masker) Struct(s interface{}) (interface{}, error) {
 					newval = reflect.Append(newval, reflect.ValueOf(_n))
 				}
 				tptr.Elem().Field(i).Set(newval)
+				continue
+			}
+			if selem.Field(i).Type().Elem().Kind() == reflect.Interface && mtype(mtag) == MStruct {
+				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
+				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
+					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
+					if err != nil {
+						return nil, err
+					}
+					if reflect.TypeOf(selem.Field(i).Index(j).Interface()).Kind() != reflect.Ptr {
+						newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
+					} else {
+						newval = reflect.Append(newval, reflect.ValueOf(_n))
+					}
+				}
+				tptr.Elem().Field(i).Set(newval)
+				continue
 			}
 		case reflect.Interface:
 			if selem.Field(i).IsNil() {
+				continue
+			}
+			if mtype(mtag) != MStruct {
 				continue
 			}
 			_t, err := m.Struct(selem.Field(i).Interface())
 			if err != nil {
 				return nil, err
 			}
-			tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+			if reflect.TypeOf(selem.Field(i).Interface()).Kind() != reflect.Ptr {
+				tptr.Elem().Field(i).Set(reflect.ValueOf(_t).Elem())
+			} else {
+				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+			}
 		}
 	}
 
