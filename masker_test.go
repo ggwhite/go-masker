@@ -1154,12 +1154,13 @@ func TestMasker_Struct(t *testing.T) {
 		Mobiles []string `mask:"mobile"`
 	}
 	type Person struct {
-		Name   string    `mask:"name"`
-		Father *Person   `mask:"struct"`
-		Mother *Person   `mask:"struct"`
-		Kids   []Person  `mask:"struct"`
-		Kids2  []*Person `mask:"struct"`
-		User   User      `mask:"struct"`
+		Name        string    `mask:"name"`
+		Father      *Person   `mask:"struct"`
+		Mother      *Person   `mask:"struct"`
+		Kids        []Person  `mask:"struct"`
+		Kids2       []*Person `mask:"struct"`
+		User        User      `mask:"struct"`
+		UntagFather *Person
 	}
 	type Account struct {
 		Emails  []string
@@ -1274,6 +1275,23 @@ func TestMasker_Struct(t *testing.T) {
 				},
 				Mother: &Person{
 					Name: "M**ry",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Struct without tag",
+			m:    New(),
+			args: args{
+				s: &Person{
+					UntagFather: &Person{
+						Name: "ggwhite",
+					},
+				},
+			},
+			want: &Person{
+				UntagFather: &Person{
+					Name: "ggwhite",
 				},
 			},
 			wantErr: false,
