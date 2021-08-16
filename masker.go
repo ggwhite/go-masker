@@ -26,7 +26,17 @@ const (
 )
 
 // Masker is a instance to marshal masked string
-type Masker struct{}
+type Masker struct {
+	mask string
+}
+
+func strLoop(str string, length int) string {
+	var mask string
+	for i := 1; i <= length; i++ {
+		mask += str
+	}
+	return mask
+}
 
 func (m *Masker) overlay(str string, overlay string, start int, end int) (overlayed string) {
 	r := []rune(str)
@@ -269,14 +279,14 @@ func (m *Masker) Name(i string) string {
 	}
 
 	if l == 2 || l == 3 {
-		return m.overlay(i, "**", 1, 2)
+		return m.overlay(i, strLoop(instance.mask, len("**")), 1, 2)
 	}
 
 	if l > 3 {
-		return m.overlay(i, "**", 1, 3)
+		return m.overlay(i, strLoop(instance.mask, len("**")), 1, 3)
 	}
 
-	return "**"
+	return strLoop(instance.mask, len("**"))
 }
 
 // ID mask last 4 digits of ID number
@@ -289,7 +299,7 @@ func (m *Masker) ID(i string) string {
 	if l == 0 {
 		return ""
 	}
-	return m.overlay(i, "****", 6, 10)
+	return m.overlay(i, strLoop(instance.mask, len("****")), 6, 10)
 }
 
 // Address keep first 6 letters, mask the rest
@@ -303,9 +313,9 @@ func (m *Masker) Address(i string) string {
 		return ""
 	}
 	if l <= 6 {
-		return "******"
+		return strLoop(instance.mask, len("******"))
 	}
-	return m.overlay(i, "******", 6, math.MaxInt64)
+	return m.overlay(i, strLoop(instance.mask, len("******")), 6, math.MaxInt64)
 }
 
 // CreditCard mask 6 digits from the 7'th digit
@@ -320,7 +330,7 @@ func (m *Masker) CreditCard(i string) string {
 	if l == 0 {
 		return ""
 	}
-	return m.overlay(i, "******", 6, 12)
+	return m.overlay(i, strLoop(instance.mask, len("******")), 6, 12)
 }
 
 // Email keep domain and the first 3 letters
@@ -338,7 +348,7 @@ func (m *Masker) Email(i string) string {
 	addr := tmp[0]
 	domain := tmp[1]
 
-	addr = m.overlay(addr, "****", 3, 7)
+	addr = m.overlay(addr, strLoop(instance.mask, len("****")), 3, 7)
 
 	return addr + "@" + domain
 }
@@ -352,7 +362,7 @@ func (m *Masker) Mobile(i string) string {
 	if len(i) == 0 {
 		return ""
 	}
-	return m.overlay(i, "***", 4, 7)
+	return m.overlay(i, strLoop(instance.mask, len("***")), 4, 7)
 }
 
 // Telephone remove "(", ")", " ", "-" chart, and mask last 4 digits of telephone number, format to "(??)????-????"
@@ -399,12 +409,14 @@ func (m *Masker) Password(i string) string {
 	if l == 0 {
 		return ""
 	}
-	return "************"
+	return strLoop(instance.mask, len("************"))
 }
 
 // New create Masker
 func New() *Masker {
-	return &Masker{}
+	return &Masker{
+		mask: "*",
+	}
 }
 
 var instance *Masker
@@ -528,4 +540,8 @@ func Telephone(i string) string {
 // Password always return "************"
 func Password(i string) string {
 	return instance.Password(i)
+}
+
+func SetMask(mask string) {
+	instance.mask = mask
 }

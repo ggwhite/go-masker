@@ -93,6 +93,29 @@ A12345****
 0987***987
 ```
 
+## Custom Mask
+``` golang
+package main
+
+import (
+	masker "github.com/ggwhite/go-masker"
+)
+
+func main() {
+	masker.String(masker.MName, "ggwhite")
+	masker.String(masker.MID, "A123456789")
+	masker.SetMask("-")
+	masker.String(masker.MMobile, "0987987987")
+}
+```
+Result:
+```
+g**hite
+A12345****
+0987---987
+```
+
+
 ## Mask the `Struct`
 
 You can define your struct and add tag `mask` to let masker know what kind of the format to mask.
