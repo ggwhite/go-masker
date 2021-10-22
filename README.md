@@ -10,17 +10,12 @@
 Golang Masker is a simple utility of creating a mask for sensitive information.
 
 * [Getting Started](#Getting-Started)
-* [Example](#Example)
 
 # Getting Started
 
 ```
 $ go get -u github.com/ggwhite/go-masker
 ```
-
-# Example
-
-> Refrence: [go-masker-example](https://github.com/ggwhite/go-masker-example)
 
 ## Demo
 
