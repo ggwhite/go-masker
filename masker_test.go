@@ -1314,24 +1314,16 @@ func TestMasker_Struct(t *testing.T) {
 				s: &Person{
 					Name: "Jack",
 					Kids: []Person{
-						Person{
-							Name: "Beca",
-						},
-						Person{
-							Name: "Randy",
-						},
+						{Name: "Beca"},
+						{Name: "Randy"},
 					},
 				},
 			},
 			want: &Person{
 				Name: "J**k",
 				Kids: []Person{
-					Person{
-						Name: "B**a",
-					},
-					Person{
-						Name: "R**dy",
-					},
+					{Name: "B**a"},
+					{Name: "R**dy"},
 				},
 			},
 			wantErr: false,
@@ -1343,24 +1335,16 @@ func TestMasker_Struct(t *testing.T) {
 				s: &Person{
 					Name: "Jack",
 					Kids2: []*Person{
-						&Person{
-							Name: "Beca",
-						},
-						&Person{
-							Name: "Randy",
-						},
+						{Name: "Beca"},
+						{Name: "Randy"},
 					},
 				},
 			},
 			want: &Person{
 				Name: "J**k",
 				Kids2: []*Person{
-					&Person{
-						Name: "B**a",
-					},
-					&Person{
-						Name: "R**dy",
-					},
+					{Name: "B**a"},
+					{Name: "R**dy"},
 				},
 			},
 			wantErr: false,
@@ -1409,13 +1393,13 @@ func TestMasker_Struct(t *testing.T) {
 			args: args{
 				s: &Account{
 					Bossies: []*Boss{
-						&Boss{
+						{
 							Mobiles: []string{
 								"0987987987",
 								"0978978978",
 							},
 						},
-						&Boss{
+						{
 							Mobiles: []string{
 								"0987987987",
 								"0978978978",
@@ -1426,13 +1410,13 @@ func TestMasker_Struct(t *testing.T) {
 			},
 			want: &Account{
 				Bossies: []*Boss{
-					&Boss{
+					{
 						Mobiles: []string{
 							"0987987987",
 							"0978978978",
 						},
 					},
-					&Boss{
+					{
 						Mobiles: []string{
 							"0987987987",
 							"0978978978",
@@ -1733,24 +1717,16 @@ func TestStruct(t *testing.T) {
 				s: &Person{
 					Name: "Jack",
 					Kids: []Person{
-						Person{
-							Name: "Beca",
-						},
-						Person{
-							Name: "Randy",
-						},
+						{Name: "Beca"},
+						{Name: "Randy"},
 					},
 				},
 			},
 			want: &Person{
 				Name: "J**k",
 				Kids: []Person{
-					Person{
-						Name: "B**a",
-					},
-					Person{
-						Name: "R**dy",
-					},
+					{Name: "B**a"},
+					{Name: "R**dy"},
 				},
 			},
 			wantErr: false,
@@ -1761,24 +1737,16 @@ func TestStruct(t *testing.T) {
 				s: &Person{
 					Name: "Jack",
 					Kids2: []*Person{
-						&Person{
-							Name: "Beca",
-						},
-						&Person{
-							Name: "Randy",
-						},
+						{Name: "Beca"},
+						{Name: "Randy"},
 					},
 				},
 			},
 			want: &Person{
 				Name: "J**k",
 				Kids2: []*Person{
-					&Person{
-						Name: "B**a",
-					},
-					&Person{
-						Name: "R**dy",
-					},
+					{Name: "B**a"},
+					{Name: "R**dy"},
 				},
 			},
 			wantErr: false,
@@ -1824,13 +1792,13 @@ func TestStruct(t *testing.T) {
 			args: args{
 				s: &Account{
 					Bossies: []*Boss{
-						&Boss{
+						{
 							Mobiles: []string{
 								"0987987987",
 								"0978978978",
 							},
 						},
-						&Boss{
+						{
 							Mobiles: []string{
 								"0987987987",
 								"0978978978",
@@ -1841,13 +1809,13 @@ func TestStruct(t *testing.T) {
 			},
 			want: &Account{
 				Bossies: []*Boss{
-					&Boss{
+					{
 						Mobiles: []string{
 							"0987987987",
 							"0978978978",
 						},
 					},
-					&Boss{
+					{
 						Mobiles: []string{
 							"0987987987",
 							"0978978978",
