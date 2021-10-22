@@ -15,14 +15,14 @@ type mtype string
 // Maske Types of format string
 const (
 	MPassword   mtype = "password"
-	MName             = "name"
-	MAddress          = "addr"
-	MEmail            = "email"
-	MMobile           = "mobile"
-	MTelephone        = "tel"
-	MID               = "id"
-	MCreditCard       = "credit"
-	MStruct           = "struct"
+	MName       mtype = "name"
+	MAddress    mtype = "addr"
+	MEmail      mtype = "email"
+	MMobile     mtype = "mobile"
+	MTelephone  mtype = "tel"
+	MID         mtype = "id"
+	MCreditCard mtype = "credit"
+	MStruct     mtype = "struct"
 )
 
 // Masker is a instance to marshal masked string
@@ -345,6 +345,14 @@ func (m *Masker) Email(i string) string {
 	}
 
 	tmp := strings.Split(i, "@")
+
+	switch len(tmp) {
+	case 0:
+		return ""
+	case 1:
+		return m.overlay(i, strLoop(instance.mask, len("****")), 3, 7)
+	}
+
 	addr := tmp[0]
 	domain := tmp[1]
 

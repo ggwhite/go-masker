@@ -480,6 +480,14 @@ func TestMasker_Email(t *testing.T) {
 			},
 			want: "qq****@gmail.com",
 		},
+		{
+			name: "Invalid email format",
+			m:    New(),
+			args: args{
+				i: "abcd",
+			},
+			want: "abc****",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -645,7 +653,7 @@ func TestNew(t *testing.T) {
 	}{
 		{
 			name: "New Instance",
-			want: &Masker{},
+			want: &Masker{mask: "*"},
 		},
 	}
 	for _, tt := range tests {
