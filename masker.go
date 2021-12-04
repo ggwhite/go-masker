@@ -4,6 +4,7 @@ package masker
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"reflect"
 	"strings"
 )
@@ -23,6 +24,7 @@ const (
 	MID         mtype = "id"
 	MCreditCard mtype = "credit"
 	MStruct     mtype = "struct"
+	MURL        mtype = "url"
 )
 
 // Masker is a instance to marshal masked string
@@ -254,6 +256,8 @@ func (m *Masker) String(t mtype, i string) string {
 		return m.Telephone(i)
 	case MCreditCard:
 		return m.CreditCard(i)
+	case MURL:
+		return m.URL(i)
 	}
 }
 
@@ -418,6 +422,19 @@ func (m *Masker) Password(i string) string {
 		return ""
 	}
 	return strLoop(instance.mask, len("************"))
+}
+
+// URL mask the password part of the URL if exists
+//
+// Example:
+//   input: http://admin:mysecretpassword@localhost:1234/uri
+//   output:http://admin:xxxxx@localhost:1234/uri
+func (m *Masker) URL(i string) string {
+	u, err := url.Parse(i)
+	if err != nil {
+		return i
+	}
+	return u.Redacted()
 }
 
 // New create Masker
