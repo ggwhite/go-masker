@@ -319,7 +319,7 @@ func (m *Masker) Address(i string) string {
 	if l <= 6 {
 		return strLoop(instance.mask, len("******"))
 	}
-	return m.overlay(i, strLoop(instance.mask, len("******")), 6, math.MaxInt64)
+	return m.overlay(i, strLoop(instance.mask, len("******")), 6, math.MaxInt)
 }
 
 // CreditCard mask 6 digits from the 7'th digit
