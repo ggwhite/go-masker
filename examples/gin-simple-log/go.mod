@@ -6,3 +6,5 @@ require (
 	github.com/ggwhite/go-masker v1.0.4
 	github.com/gin-gonic/gin v1.7.4
 )
+
+replace github.com/ggwhite/go-masker => ../../../go-masker
