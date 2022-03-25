@@ -349,11 +349,7 @@ func (m *Masker) Email(i string) string {
 	}
 
 	tmp := strings.Split(i, "@")
-
-	switch len(tmp) {
-	case 0:
-		return ""
-	case 1:
+	if len(tmp) == 1 {
 		return m.overlay(i, strLoop(instance.mask, len("****")), 3, 7)
 	}
 
