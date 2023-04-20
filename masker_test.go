@@ -1653,6 +1653,18 @@ func TestStruct(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "Postgres URL",
+			args: args{
+				s: &User{
+					URL: "postgres://username:mypass@localhost:5432/database_name",
+				},
+			},
+			want: &User{
+				URL: "postgres://username:xxxxx@localhost:5432/database_name",
+			},
+			wantErr: false,
+		},
+		{
 			name: "String Slice",
 			args: args{
 				s: &Boss{
