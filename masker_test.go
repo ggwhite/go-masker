@@ -1590,6 +1590,7 @@ func TestStruct(t *testing.T) {
 		Password   string `mask:"password"`
 		CreditCard string `mask:"credit"`
 		URL        string `mask:"url"`
+		unexported string
 	}
 	type Boss struct {
 		Mobiles []string `mask:"mobile"`
@@ -1637,6 +1638,7 @@ func TestStruct(t *testing.T) {
 					Password:   "abcde",
 					CreditCard: "1234567890987654",
 					URL:        "https://admin:secretpass@localhost:4321/uri",
+					unexported: "unexported",
 				},
 			},
 			want: &User{
@@ -1649,6 +1651,7 @@ func TestStruct(t *testing.T) {
 				Password:   "************",
 				CreditCard: "123456******7654",
 				URL:        "https://admin:xxxxx@localhost:4321/uri",
+				unexported: "",
 			},
 			wantErr: false,
 		},
