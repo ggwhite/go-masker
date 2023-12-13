@@ -67,7 +67,7 @@ func main() {
 
 ## Mask the `String`
 
-`String` methomd requires two parameters, a mask type CONST and a string:
+`String` method requires two parameters, a mask type CONST and a string:
 ``` golang
 package main
 
