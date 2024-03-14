@@ -6,14 +6,12 @@
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/ggwhite/go-masker/blob/master/LICENSE)
 [![Release](https://img.shields.io/github/release/ggwhite/go-masker.svg?style=flat-square)](https://github.com/ggwhite/go-masker/releases/latest)
 
+Go Masker v2 is a tool for masking sensitive data in Go code. It provides a simple and convenient way to replace sensitive information, such as passwords or API keys, with placeholder values.
+
 * [Install](#install)
 * [Usage](#usage)
 * [Custom Masker](#custom-masker)
 * [Contributors](#contributors)
-
-# Go Masker v2
-
-Go Masker v2 is a tool for masking sensitive data in Go code. It provides a simple and convenient way to replace sensitive information, such as passwords or API keys, with placeholder values.
 
 ## Install
 
