@@ -1,8 +1,8 @@
 # Go Masker v2
 
 [![build workflow](https://github.com/ggwhite/go-masker/actions/workflows/go.yml/badge.svg)](https://github.com/ggwhite/go-masker/actions)
-[![GoDoc](https://godoc.org/github.com/ggwhite/go-masker/v2?status.svg)](https://godoc.org/github.com/ggwhite/go-masker/v2)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ggwhite/go-masker/v2)](https://goreportcard.com/report/github.com/ggwhite/go-masker/v2)
+[![GoDoc](https://godoc.org/github.com/ggwhite/go-masker?status.svg)](https://godoc.org/github.com/ggwhite/go-masker)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ggwhite/go-masker)](https://goreportcard.com/report/github.com/ggwhite/go-masker)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/ggwhite/go-masker/blob/master/LICENSE)
 [![Release](https://img.shields.io/github/release/ggwhite/go-masker.svg?style=flat-square)](https://github.com/ggwhite/go-masker/releases/latest)
 
