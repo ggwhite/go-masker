@@ -24,7 +24,7 @@ func (m *EmailMasker) Marshal(s string, i string) string {
 	addr := tmp[0]
 	domain := tmp[1]
 
-	addr = overlay(addr, strLoop(s, 4), 3, 7)
+	addr = overlay(addr, strLoop(s, 4), 3, len(addr))
 
 	return addr + "@" + domain
 }

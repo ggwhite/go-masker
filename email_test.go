@@ -27,7 +27,7 @@ func TestEmailMasker_Marshal(t *testing.T) {
 				s: "*",
 				i: "ggw.chang@gmail.com",
 			},
-			want: "ggw****ng@gmail.com",
+			want: "ggw****@gmail.com",
 		},
 		{
 			name: "Address Less Than 3",
