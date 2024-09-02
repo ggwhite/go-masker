@@ -345,7 +345,7 @@ func TestMaskerMarshaler_Struct(t *testing.T) {
 					Email string `mask:"email"`
 				}{
 					Name:  "J**n D**e",
-					Email: "ggw****ng@gmail.com",
+					Email: "ggw****@gmail.com",
 				},
 			},
 		},
