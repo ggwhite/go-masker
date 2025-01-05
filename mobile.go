@@ -12,5 +12,5 @@ func (m *MobileMasker) Marshal(s string, i string) string {
 	if len(i) == 0 {
 		return ""
 	}
-	return overlay(i, strLoop(s, 3), 4, 7)
+	return overlay(i, strLoop(s, 7), 2, 10)
 }
