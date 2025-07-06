@@ -22,6 +22,7 @@ const (
 	MaskerTypeID       MaskerType = "id"
 	MaskerTypeCredit   MaskerType = "credit"
 	MaskerTypeURL      MaskerType = "url"
+	MaskerTypeAbuse    MaskerType = "abuse"
 	MaskerTypeStruct   MaskerType = "struct"
 )
 
@@ -310,6 +311,7 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 //   - IDMasker
 //   - CreditMasker
 //   - URLMasker
+//   - AbuseMasker
 //
 // Default masker is "*"
 // It is used for masking sensitive data
@@ -326,6 +328,7 @@ func NewMaskerMarshaler() *MaskerMarshaler {
 			MaskerTypeID:       &IDMasker{},
 			MaskerTypeCredit:   &CreditMasker{},
 			MaskerTypeURL:      &URLMasker{},
+			MaskerTypeAbuse:    &AbuseMasker{},
 		},
 		masker: "*",
 	}
@@ -344,6 +347,7 @@ func NewMaskerMarshaler() *MaskerMarshaler {
 //   - IDMasker
 //   - CreditMasker
 //   - URLMasker
+//   - AbuseMasker
 //
 // Default masker is "*"
 // It is used for masking sensitive data
@@ -359,6 +363,7 @@ var DefaultMaskerMarshaler = &MaskerMarshaler{
 		MaskerTypeID:       &IDMasker{},
 		MaskerTypeCredit:   &CreditMasker{},
 		MaskerTypeURL:      &URLMasker{},
+		MaskerTypeAbuse:    &AbuseMasker{},
 	},
 	masker: "*",
 }
