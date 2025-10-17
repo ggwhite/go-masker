@@ -18,7 +18,7 @@ Go Masker v2 is a tool for masking sensitive data in Go code. It provides a simp
 To install Go Masker v2, you can use the following command:
 
 ```bash
-go get -u github.com/ggwhite/go-masker
+go get -u github.com/ggwhite/go-masker/v2
 ```
 
 ## Usage
