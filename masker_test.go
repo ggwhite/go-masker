@@ -428,6 +428,7 @@ func TestNewMaskerMarshaler(t *testing.T) {
 					MaskerTypeID:       &IDMasker{},
 					MaskerTypeCredit:   &CreditMasker{},
 					MaskerTypeURL:      &URLMasker{},
+					MaskerTypeAbuse:    &AbuseMasker{},
 				},
 				masker: "*",
 			},
