@@ -2,14 +2,23 @@ package masker
 
 import "strings"
 
+// NameMasker is a masker for names.
+// It masks the 2nd and 3rd characters, preserving the first and last.
+// Space-separated words (e.g. full names) are each masked independently.
 type NameMasker struct{}
 
-// Marshal masks name
-// It mask the second letter and the third letter
+// Marshal masks a name by replacing the middle characters with the mask char.
+//
+// Rules:
+//   - length 1: returns 2 mask chars
+//   - length 2–3: masks the 2nd character
+//   - length 4+: masks the 2nd and 3rd characters
+//   - spaces: each word is masked independently
+//
 // Example:
 //
-//	NameMasker{}.Marshal("*", "name") // returns "n**e"
-//	NameMasker{}.Marshal("*", "ABCD") // returns "A**D"
+//	NameMasker{}.Marshal("*", "John")     // returns "J**n"
+//	NameMasker{}.Marshal("*", "John Doe") // returns "J**n D**e"
 func (m *NameMasker) Marshal(s string, i string) string {
 	l := len([]rune(i))
 
@@ -17,7 +26,6 @@ func (m *NameMasker) Marshal(s string, i string) string {
 		return ""
 	}
 
-	// if has space
 	if strs := strings.Split(i, " "); len(strs) > 1 {
 		tmp := make([]string, len(strs))
 		for idx, str := range strs {
