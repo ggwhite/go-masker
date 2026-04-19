@@ -1,0 +1,90 @@
+package masker
+
+import "testing"
+
+func TestParseGenericMask(t *testing.T) {
+	tests := []struct {
+		tag     string
+		value   string
+		want    string
+		matched bool
+		wantErr bool
+	}{
+		{tag: "all", value: "hello", want: "*****", matched: true},
+		{tag: "all", value: "", want: "", matched: true},
+		{tag: "first-3", value: "hello", want: "***lo", matched: true},
+		{tag: "first-0", value: "hello", want: "hello", matched: true},
+		{tag: "first-10", value: "hello", want: "*****", matched: true},
+		{tag: "last-3", value: "hello", want: "he***", matched: true},
+		{tag: "last-0", value: "hello", want: "hello", matched: true},
+		{tag: "last-10", value: "hello", want: "*****", matched: true},
+		{tag: "name", value: "hello", want: "", matched: false},
+		{tag: "first-abc", value: "hello", want: "", matched: false, wantErr: true},
+		{tag: "last-abc", value: "hello", want: "", matched: false, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.tag+"/"+tt.value, func(t *testing.T) {
+			got, matched, err := parseGenericMask("*", tt.tag, tt.value)
+			if matched != tt.matched {
+				t.Errorf("matched = %v, want %v", matched, tt.matched)
+			}
+			if (err != nil) != tt.wantErr {
+				t.Errorf("err = %v, wantErr %v", err, tt.wantErr)
+			}
+			if matched && !tt.wantErr && got != tt.want {
+				t.Errorf("got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMarshal_GenericTags(t *testing.T) {
+	m := NewMaskerMarshaler()
+	tests := []struct {
+		tag   MaskerType
+		value string
+		want  string
+	}{
+		{MaskerTypeAll, "hello", "*****"},
+		{"first-2", "hello", "**llo"},
+		{"last-2", "hello", "hel**"},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.tag)+"/"+tt.value, func(t *testing.T) {
+			got, err := m.Marshal(tt.tag, tt.value)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStruct_GenericTags(t *testing.T) {
+	type Secret struct {
+		SSN     string `mask:"all"`
+		Code    string `mask:"first-3"`
+		Suffix  string `mask:"last-4"`
+	}
+
+	m := NewMaskerMarshaler()
+	in := &Secret{SSN: "123456789", Code: "ABCDEF", Suffix: "ABCDEF"}
+	out, err := m.Struct(in)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	s := out.(*Secret)
+	if s.SSN != "*********" {
+		t.Errorf("SSN got %v, want *********", s.SSN)
+	}
+	if s.Code != "***DEF" {
+		t.Errorf("Code got %v, want ***DEF", s.Code)
+	}
+	if s.Suffix != "AB****" {
+		t.Errorf("Suffix got %v, want AB****", s.Suffix)
+	}
+}

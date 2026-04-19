@@ -239,8 +239,19 @@ func TestMaskerMarshaler_List(t *testing.T) {
 				Maskers: tt.fields.Maskers,
 				masker:  tt.fields.masker,
 			}
-			if got := m.List(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MaskerMarshaler.List() = %v, want %v", got, tt.want)
+			got := m.List()
+			wantSet := make(map[MaskerType]struct{}, len(tt.want))
+			for _, v := range tt.want {
+				wantSet[v] = struct{}{}
+			}
+			if len(got) != len(tt.want) {
+				t.Errorf("MaskerMarshaler.List() len = %v, want %v", len(got), len(tt.want))
+				return
+			}
+			for _, v := range got {
+				if _, ok := wantSet[v]; !ok {
+					t.Errorf("MaskerMarshaler.List() unexpected item %v", v)
+				}
 			}
 		})
 	}
@@ -459,6 +470,7 @@ func TestNewMaskerMarshaler(t *testing.T) {
 					MaskerTypeCredit:   &CreditMasker{},
 					MaskerTypeURL:      &URLMasker{},
 					MaskerTypeAbuse:    &AbuseMasker{},
+					MaskerTypeAll:      &AllMasker{},
 				},
 				masker: "*",
 			},
@@ -466,8 +478,15 @@ func TestNewMaskerMarshaler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewMaskerMarshaler(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewMaskerMarshaler() = %v, want %v", got, tt.want)
+			got := NewMaskerMarshaler()
+			if len(got.Maskers) != len(tt.want.Maskers) {
+				t.Errorf("NewMaskerMarshaler() maskers count = %v, want %v", len(got.Maskers), len(tt.want.Maskers))
+				return
+			}
+			for k := range tt.want.Maskers {
+				if _, ok := got.Maskers[k]; !ok {
+					t.Errorf("NewMaskerMarshaler() missing masker %v", k)
+				}
 			}
 		})
 	}

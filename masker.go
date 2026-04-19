@@ -24,6 +24,7 @@ const (
 	MaskerTypeURL      MaskerType = "url"
 	MaskerTypeAbuse    MaskerType = "abuse"
 	MaskerTypeStruct   MaskerType = "struct"
+	MaskerTypeAll      MaskerType = "all"
 )
 
 // Masker is an interface for masking sensitive data
@@ -53,6 +54,9 @@ type MaskerMarshaler struct {
 //	log.Println(m.Marshal(masker.MaskerTypeCredit, "4111111111111111"))                 // 411111******1111 <nil>
 //	log.Println(m.Marshal(masker.MaskerTypeURL, "http://john:password@localhost:3000")) // http://john:xxxxx@localhost:3000 <nil>
 func (m *MaskerMarshaler) Marshal(t MaskerType, value string) (string, error) {
+	if result, matched, err := parseGenericMask(m.masker, string(t), value); matched {
+		return result, err
+	}
 	masker, ok := m.Maskers[t]
 	if !ok {
 		return "", fmt.Errorf("masker %v not found", t)
@@ -320,7 +324,9 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 //   - CreditMasker
 //   - URLMasker
 //   - AbuseMasker
+//   - AllMasker
 //
+// Dynamic tags "first-N" and "last-N" are also supported without registration.
 // Default masker is "*"
 // It is used for masking sensitive data
 func NewMaskerMarshaler() *MaskerMarshaler {
@@ -337,6 +343,7 @@ func NewMaskerMarshaler() *MaskerMarshaler {
 			MaskerTypeCredit:   &CreditMasker{},
 			MaskerTypeURL:      &URLMasker{},
 			MaskerTypeAbuse:    &AbuseMasker{},
+			MaskerTypeAll:      &AllMasker{},
 		},
 		masker: "*",
 	}
@@ -372,6 +379,7 @@ var DefaultMaskerMarshaler = &MaskerMarshaler{
 		MaskerTypeCredit:   &CreditMasker{},
 		MaskerTypeURL:      &URLMasker{},
 		MaskerTypeAbuse:    &AbuseMasker{},
+		MaskerTypeAll:      &AllMasker{},
 	},
 	masker: "*",
 }
