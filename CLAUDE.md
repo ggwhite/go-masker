@@ -54,6 +54,35 @@ Or directly:
 go test ./...
 ```
 
+## Release
+
+使用 [Semantic Versioning](https://semver.org/)：
+
+| 版本類型 | 條件 | 範例 |
+|----------|------|------|
+| patch `x.y.Z` | bug fix、文件更新、不影響 API 的內部改動 | `2.2.1` |
+| minor `x.Y.0` | 新增功能、新增 masker type、向後相容的 API 擴充 | `2.3.0` |
+| major `X.0.0` | 破壞性變更（移除 API、改變行為、升級 module path） | `3.0.0` |
+
+### 發布流程
+
+```bash
+gh release create vX.Y.Z --title "Release vX.Y.Z" --notes "..."
+```
+
+release notes 格式：
+
+```
+## What's New
+- 新功能描述
+
+## Bug Fixes
+- 修正描述
+
+## Breaking Changes（如有）
+- 描述
+```
+
 ## Key Types
 
 - `Masker` interface — implement to create a custom masker
