@@ -368,6 +368,36 @@ func TestMaskerMarshaler_Struct(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "test struct with non-struct input returns error",
+			fields: fields{
+				Maskers: map[MaskerType]Masker{},
+				masker:  "*",
+			},
+			args:    args{s: "string input"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "test struct with int input returns error",
+			fields: fields{
+				Maskers: map[MaskerType]Masker{},
+				masker:  "*",
+			},
+			args:    args{s: 42},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "test struct with pointer to non-struct returns error",
+			fields: fields{
+				Maskers: map[MaskerType]Masker{},
+				masker:  "*",
+			},
+			args:    args{s: func() *string { s := "hello"; return &s }()},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name: "test struct with slice string",
 			fields: fields{
 				Maskers: map[MaskerType]Masker{
