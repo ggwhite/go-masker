@@ -3,7 +3,6 @@ package masker
 
 import (
 	"fmt"
-	"math"
 	"net/url"
 	"reflect"
 	"strings"
@@ -322,7 +321,7 @@ func (m *Masker) Address(i string) string {
 	if l <= 6 {
 		return strLoop(instance.mask, len("******"))
 	}
-	return m.overlay(i, strLoop(instance.mask, len("******")), 6, math.MaxInt)
+	return m.overlay(i, strLoop(instance.mask, len("******")), 6, len(i))
 }
 
 // CreditCard mask 6 digits from the 7'th digit
