@@ -174,6 +174,14 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 
 	st := reflect.TypeOf(s)
 
+	actualKind := st.Kind()
+	if actualKind == reflect.Ptr {
+		actualKind = st.Elem().Kind()
+	}
+	if actualKind != reflect.Struct {
+		return nil, fmt.Errorf("input must be a struct or pointer to struct, got %v", actualKind)
+	}
+
 	if st.Kind() == reflect.Ptr {
 		tptr = reflect.New(st.Elem())
 		selem = reflect.ValueOf(s).Elem()
