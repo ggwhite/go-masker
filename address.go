@@ -1,7 +1,5 @@
 package masker
 
-import "math"
-
 // AddressMasker is a masker for address
 type AddressMasker struct{}
 
@@ -18,5 +16,5 @@ func (m *AddressMasker) Marshal(s string, i string) string {
 	if l <= 6 {
 		return strLoop(s, 6)
 	}
-	return overlay(i, strLoop(s, 6), 6, math.MaxInt)
+	return overlay(i, strLoop(s, 6), 6, l)
 }

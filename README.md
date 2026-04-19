@@ -6,156 +6,23 @@
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/ggwhite/go-masker/blob/master/LICENSE)
 [![Release](https://img.shields.io/github/release/ggwhite/go-masker.svg?style=flat-square)](https://github.com/ggwhite/go-masker/releases/latest)
 
-Go Masker v2 is a tool for masking sensitive data in Go code. It provides a simple and convenient way to replace sensitive information, such as passwords or API keys, with placeholder values.
+Go Masker v2 is a simple and extensible library for masking sensitive data in Go structs. Use struct tags to control how fields are masked — passwords, emails, IDs, credit cards, and more.
 
 * [Install](#install)
-* [Usage](#usage)
+* [Quick Start](#quick-start)
+* [Masker Types](#masker-types)
+* [Custom Mask Character](#custom-mask-character)
 * [Abuse Masker](#abuse-masker)
 * [Custom Masker](#custom-masker)
 * [Contributors](#contributors)
 
 ## Install
 
-To install Go Masker v2, you can use the following command:
-
 ```bash
 go get -u github.com/ggwhite/go-masker/v2
 ```
 
-## Usage
-
-To use Go Masker v2, you can create a new instance of the `Masker` type and then use its methods to mask sensitive data. For example:
-
-```go
-package main
-
-import (
-    "log"
-    masker "github.com/ggwhite/go-masker/v2"
-)
-
-type Foo struct {
-    Name   string `mask:"name"`
-    Mobile string `mask:"mobile"`
-}
-
-func main() {
-    foo := &Foo{
-        Name:   "ggwhite",
-        Mobile: "0987987987",
-    }
-
-    m := masker.NewMaskerMarshaler()
-
-    t, err := m.Struct(foo)
-    log.Println(t)
-    log.Println(err)
-}
-```
-
-This will produce the following output:
-
-```
-t = &{g**hite 0987***987}
-err = <nil>
-```
-
-For more information about how to use Go Masker v2, please refer to the [documentation](https://pkg.go.dev/github.com/ggwhite/go-masker/v2).
-
-## Abuse Masker
-
-The abuse masker uses a trie data structure for efficient word matching and masking. It allows you to mask abusive or inappropriate words in text content, which is crucial for maintaining appropriate communication in chat applications, forums, and social media platforms.
-
-### Basic Usage
-
-```go
-package main
-
-import (
-    "fmt"
-    masker "github.com/ggwhite/go-masker/v2"
-)
-
-func main() {
-    // Create abuse masker with predefined words
-    abuseWords := []string{"bad", "terrible", "awful"}
-    abuseMasker := masker.NewAbuseMaskerWithWords(abuseWords)
-    
-    text := "This is a bad word and terrible situation"
-    maskedText := abuseMasker.Marshal("*", text)
-    
-    fmt.Printf("Original: %s\n", text)
-    fmt.Printf("Masked:   %s\n", maskedText)
-    // Output: This is a *** word and ******** situation
-}
-```
-
-### Loading Words from File
-
-```go
-package main
-
-import (
-    "log"
-    masker "github.com/ggwhite/go-masker/v2"
-)
-
-func main() {
-    loader := masker.NewAbuseWordLoader()
-    
-    // Load words from a file
-    words, err := loader.LoadFromFile("abuse_words.txt")
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    abuseMasker := masker.NewAbuseMaskerWithWords(words)
-    // Use the masker...
-}
-```
-
-### Loading Words from S3
-
-```go
-package main
-
-import (
-    "log"
-    masker "github.com/ggwhite/go-masker/v2"
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/s3"
-)
-//Your own function to load words from S3 and pass words in abuse masker
-func loadWordsFromS3(bucket, key string) ([]string, error) {
-    sess := session.Must(session.NewSession())
-    svc := s3.New(sess)
-    
-    result, err := svc.GetObject(&s3.GetObjectInput{
-        Bucket: aws.String(bucket),
-        Key:    aws.String(key),
-    })
-    if err != nil {
-        return nil, err
-    }
-    defer result.Body.Close()
-    
-    loader := masker.NewAbuseWordLoader()
-    return loader.LoadFromReader(result.Body)
-}
-
-func main() {
-    words, err := loadWordsFromS3("my-bucket", "abuse-words.txt")
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    abuseMasker := masker.NewAbuseMaskerWithWords(words)
-    // Use the masker...
-}
-```
-
-### Using with Struct Tags
+## Quick Start
 
 ```go
 package main
@@ -166,70 +33,156 @@ import (
 )
 
 type User struct {
-    Name    string `mask:"name"`
-    Comment string `mask:"abuse"`
+    Name     string `mask:"name"`
+    Email    string `mask:"email"`
+    Password string `mask:"password"`
+    Mobile   string `mask:"mobile"`
 }
 
 func main() {
-    user := &User{
-        Name:    "John Doe",
-        Comment: "This is a bad comment",
+    u := &User{
+        Name:     "John Doe",
+        Email:    "john@gmail.com",
+        Password: "secret",
+        Mobile:   "0987654321",
     }
-    
+
     m := masker.NewMaskerMarshaler()
-    
-    // Register abuse masker with words
-    abuseMasker := masker.NewAbuseMaskerWithWords([]string{"bad", "terrible"})
-    m.Register(masker.MaskerTypeAbuse, abuseMasker)
-    
-    maskedUser, err := m.Struct(user)
+    masked, err := m.Struct(u)
     if err != nil {
         log.Fatal(err)
     }
-    
-    log.Printf("Masked: %+v", maskedUser)
+    log.Println(masked) // &{J**n D**e joh****@gmail.com ************** 0987***321}
 }
+```
+
+You can also use the package-level default instance:
+
+```go
+masked, err := masker.DefaultMaskerMarshaler.Struct(u)
+```
+
+## Masker Types
+
+| Tag | Description | Example Input | Example Output |
+|-----|-------------|---------------|----------------|
+| `none` | No masking, return as-is | `foo` | `foo` |
+| `password` | Always returns 14 asterisks | `secret` | `**************` |
+| `name` | Masks middle characters | `John Doe` | `J**n D**e` |
+| `addr` | Masks last 6 characters | `台北市內湖區內湖路一段737巷1號` | `台北市內湖區內湖路一段7******` |
+| `email` | Keeps first 3 chars and domain | `john@gmail.com` | `joh****@gmail.com` |
+| `mobile` | Masks 3 digits from 4th position | `0987654321` | `0987***321` |
+| `tel` | Formats and masks last 4 digits | `0227993078` | `(02)2799-****` |
+| `id` | Masks digits 7–10 | `A123456789` | `A12345****` |
+| `credit` | Masks digits 7–12 | `4111111111111111` | `411111******1111` |
+| `url` | Masks URL password | `http://user:pass@host` | `http://user:xxxxx@host` |
+| `abuse` | Masks abusive words via trie | `bad word` | `*** word` |
+| `struct` | Recursively masks nested struct | — | — |
+
+### Masking Slices
+
+String slices are also supported:
+
+```go
+type Foo struct {
+    Tags []string `mask:"name"`
+}
+```
+
+### Masking Nested Structs
+
+```go
+type Address struct {
+    Street string `mask:"addr"`
+}
+
+type User struct {
+    Name    string  `mask:"name"`
+    Address Address `mask:"struct"`
+}
+```
+
+## Custom Mask Character
+
+By default, `*` is used as the mask character. Use `SetMasker` to change it:
+
+```go
+m := masker.NewMaskerMarshaler()
+m.SetMasker("#")
+
+masked, _ := m.Struct(u)
+// Name "John" -> "J##n"
+```
+
+## Abuse Masker
+
+The abuse masker uses a trie for efficient word matching and replacement.
+
+### Basic Usage
+
+```go
+abuseWords := []string{"bad", "terrible", "awful"}
+abuseMasker := masker.NewAbuseMaskerWithWords(abuseWords)
+
+text := "This is a bad and terrible situation"
+masked := abuseMasker.Marshal("*", text)
+// Output: "This is a *** and ******** situation"
+```
+
+### Load Words from File
+
+```go
+loader := masker.NewAbuseWordLoader()
+words, err := loader.LoadFromFile("abuse_words.txt")
+if err != nil {
+    log.Fatal(err)
+}
+abuseMasker := masker.NewAbuseMaskerWithWords(words)
+```
+
+### Use with Struct Tags
+
+```go
+type Post struct {
+    Title   string `mask:"name"`
+    Content string `mask:"abuse"`
+}
+
+m := masker.NewMaskerMarshaler()
+m.Register(masker.MaskerTypeAbuse, masker.NewAbuseMaskerWithWords([]string{"bad"}))
+
+masked, _ := m.Struct(&Post{Title: "Hello", Content: "bad content"})
 ```
 
 ## Custom Masker
 
-You can also create a custom masker by implementing the `Masker` interface. For example:
+Implement the `Masker` interface to create your own masker:
 
 ```go
-package main
-
-import (
-    "log"
-    masker "github.com/ggwhite/go-masker/v2"
-)
-
-type MyEmailMasker struct{}
-
-func (m *MyEmailMasker) Marshal(s, i string) string {
-	return "myemailmasker"
-}
-
-type MyMasker struct{}
-
-func (m *MyMasker) Marshal(s, i string) string {
-	return "mymasker"
-}
-
-func main() {
-    m := masker.NewMaskerMarshaler()
-
-    // Register custom masker and override default masker
-	m.Register(masker.MaskerTypeEmail, &MyEmailMasker{})
-
-	log.Println(m.Marshal(masker.MaskerTypeEmail, "email")) // myemailmasker <nil>
-
-	// Register custom masker and use it
-	m.Register("mymasker", &MyMasker{})
-
-	log.Println(m.Marshal("mymasker", "1234567")) // mymasker <nil>
+type Masker interface {
+    Marshal(maskChar string, value string) string
 }
 ```
 
+Example:
+
+```go
+type SSNMasker struct{}
+
+func (m *SSNMasker) Marshal(s, i string) string {
+    if len(i) != 9 {
+        return i
+    }
+    return "***-**-" + i[7:]
+}
+
+m := masker.NewMaskerMarshaler()
+m.Register("ssn", &SSNMasker{})
+
+type Person struct {
+    SSN string `mask:"ssn"`
+}
+```
 
 ## Contributors
 
