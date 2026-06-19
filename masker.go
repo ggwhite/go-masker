@@ -12,19 +12,20 @@ type MaskerType string
 
 // MaskerType constants
 const (
-	MaskerTypeNone     MaskerType = "none"
-	MaskerTypePassword MaskerType = "password"
-	MaskerTypeName     MaskerType = "name"
-	MaskerTypeAddress  MaskerType = "addr"
-	MaskerTypeEmail    MaskerType = "email"
-	MaskerTypeMobile   MaskerType = "mobile"
-	MaskerTypeTel      MaskerType = "tel"
-	MaskerTypeID       MaskerType = "id"
-	MaskerTypeCredit   MaskerType = "credit"
-	MaskerTypeURL      MaskerType = "url"
-	MaskerTypeAbuse    MaskerType = "abuse"
-	MaskerTypeStruct   MaskerType = "struct"
-	MaskerTypeAll      MaskerType = "all"
+	MaskerTypeNone      MaskerType = "none"
+	MaskerTypePassword  MaskerType = "password"
+	MaskerTypeName      MaskerType = "name"
+	MaskerTypeAddress   MaskerType = "addr"
+	MaskerTypeEmail     MaskerType = "email"
+	MaskerTypeMobile    MaskerType = "mobile"
+	MaskerTypeTel       MaskerType = "tel"
+	MaskerTypeID        MaskerType = "id"
+	MaskerTypeCredit    MaskerType = "credit"
+	MaskerTypeURL       MaskerType = "url"
+	MaskerTypeAbuse     MaskerType = "abuse"
+	MaskerTypeStruct    MaskerType = "struct"
+	MaskerTypeAll       MaskerType = "all"
+	MaskerTypeMapStruct MaskerType = "mapstruct"
 )
 
 // Masker is an interface for masking sensitive data
@@ -121,6 +122,11 @@ func (m *MaskerMarshaler) SetMasker(masker string) {
 
 // Struct must input a interface{}, add tag mask on struct fields, after Struct(), return a pointer interface{} of input type and it will be masked with the tag format type
 //
+// Limitation:
+//   - Cyclic object graphs are not specially handled. Self-referencing structures can
+//     recurse indefinitely when using `mask:"struct"` or `mask:"mapstruct"`.
+//   - Avoid cyclic references in masking paths.
+//
 // Example:
 //
 //	type Foo struct {
@@ -203,6 +209,7 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 			tptr.Elem().Field(i).Set(selem.Field(i))
 			continue
 		}
+
 		switch selem.Field(i).Type().Kind() {
 		default:
 			tptr.Elem().Field(i).Set(selem.Field(i))
@@ -231,11 +238,35 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 				}
 				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
 			}
+		case reflect.Map:
+			if selem.Field(i).IsNil() {
+				continue
+			}
+			if MaskerType(mtag) != MaskerTypeMapStruct {
+				tptr.Elem().Field(i).Set(selem.Field(i))
+				continue
+			}
+
+			maskedMap := reflect.MakeMapWithSize(selem.Field(i).Type(), selem.Field(i).Len())
+			iter := selem.Field(i).MapRange()
+			for iter.Next() {
+				v := iter.Value()
+				maskedValue, err := m.maskMapStructValue(v)
+				if err != nil {
+					return nil, err
+				}
+
+				maskedMap.SetMapIndex(iter.Key(), maskedValue)
+			}
+			tptr.Elem().Field(i).Set(maskedMap)
+			continue
+
 		case reflect.Slice:
 			if selem.Field(i).IsNil() {
 				continue
 			}
-			if selem.Field(i).Type().Elem().Kind() == reflect.String {
+			switch {
+			case selem.Field(i).Type().Elem().Kind() == reflect.String:
 				orgval := selem.Field(i).Interface().([]string)
 				newval := make([]string, len(orgval))
 				for i, val := range selem.Field(i).Interface().([]string) {
@@ -246,9 +277,7 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 					newval[i] = v
 				}
 				tptr.Elem().Field(i).Set(reflect.ValueOf(newval))
-				continue
-			}
-			if selem.Field(i).Type().Elem().Kind() == reflect.Struct && MaskerType(mtag) == MaskerTypeStruct {
+			case selem.Field(i).Type().Elem().Kind() == reflect.Struct && MaskerType(mtag) == MaskerTypeStruct:
 				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
 				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
 					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
@@ -258,9 +287,7 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 					newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
 				}
 				tptr.Elem().Field(i).Set(newval)
-				continue
-			}
-			if selem.Field(i).Type().Elem().Kind() == reflect.Ptr && MaskerType(mtag) == MaskerTypeStruct {
+			case selem.Field(i).Type().Elem().Kind() == reflect.Ptr && MaskerType(mtag) == MaskerTypeStruct:
 				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
 				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
 					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
@@ -270,9 +297,7 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 					newval = reflect.Append(newval, reflect.ValueOf(_n))
 				}
 				tptr.Elem().Field(i).Set(newval)
-				continue
-			}
-			if selem.Field(i).Type().Elem().Kind() == reflect.Interface && MaskerType(mtag) == MaskerTypeStruct {
+			case selem.Field(i).Type().Elem().Kind() == reflect.Interface && MaskerType(mtag) == MaskerTypeStruct:
 				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
 				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
 					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
@@ -286,7 +311,6 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 					}
 				}
 				tptr.Elem().Field(i).Set(newval)
-				continue
 			}
 		case reflect.Interface:
 			if selem.Field(i).IsNil() {
@@ -308,6 +332,60 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 	}
 
 	return tptr.Interface(), nil
+}
+
+// maskMapStructValue recursively masks mapstruct values for struct, ptr, and slice shapes.
+// Unsupported scalar/container leaf values are returned as-is to preserve original data.
+// Note: cyclic object graphs are not handled and may cause a stack overflow.
+func (m *MaskerMarshaler) maskMapStructValue(v reflect.Value) (reflect.Value, error) {
+	switch v.Kind() {
+	case reflect.Map:
+		if v.IsNil() {
+			return v, nil
+		}
+		maskedMap := reflect.MakeMapWithSize(v.Type(), v.Len())
+		iter := v.MapRange()
+		for iter.Next() {
+			maskedValue, err := m.maskMapStructValue(iter.Value())
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			maskedMap.SetMapIndex(iter.Key(), maskedValue)
+		}
+		return maskedMap, nil
+	case reflect.Struct:
+		nextValue, err := m.Struct(v.Interface())
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return reflect.ValueOf(nextValue).Elem(), nil
+	case reflect.Ptr:
+		if v.IsNil() {
+			return v, nil
+		}
+		maskedElem, err := m.maskMapStructValue(v.Elem())
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		maskedPtr := reflect.New(v.Elem().Type())
+		maskedPtr.Elem().Set(maskedElem)
+		return maskedPtr, nil
+	case reflect.Slice:
+		if v.IsNil() {
+			return v, nil
+		}
+		maskedSlice := reflect.MakeSlice(v.Type(), 0, v.Len())
+		for i := 0; i < v.Len(); i++ {
+			maskedElem, err := m.maskMapStructValue(v.Index(i))
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			maskedSlice = reflect.Append(maskedSlice, maskedElem)
+		}
+		return maskedSlice, nil
+	default:
+		return v, nil
+	}
 }
 
 // NewMaskerMarshaler returns a new masker marshaler

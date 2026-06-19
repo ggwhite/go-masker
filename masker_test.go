@@ -551,3 +551,232 @@ func Test_overlay(t *testing.T) {
 		})
 	}
 }
+
+func TestMaskerMarshaler_MapStructs(t *testing.T) {
+	type item struct {
+		ID string `mask:"id"`
+	}
+
+	tests := []struct {
+		name string
+		in   interface{}
+		want interface{}
+	}{
+		{
+			name: "map struct with mapstruct tag",
+			in: struct {
+				Items map[int]item `mask:"mapstruct"`
+			}{
+				Items: map[int]item{1: {ID: "A123456789"}},
+			},
+			want: &struct {
+				Items map[int]item `mask:"mapstruct"`
+			}{
+				Items: map[int]item{1: {ID: "A12345****"}},
+			},
+		},
+		{
+			name: "nil map",
+			in: struct {
+				Items map[int]item `mask:"mapstruct"`
+			}{
+				Items: nil,
+			},
+			want: &struct {
+				Items map[int]item `mask:"mapstruct"`
+			}{
+				Items: nil,
+			},
+		},
+		{
+			name: "empty non-nil map",
+			in: struct {
+				Items map[int]item `mask:"mapstruct"`
+			}{Items: map[int]item{}},
+			want: &struct {
+				Items map[int]item `mask:"mapstruct"`
+			}{Items: map[int]item{}},
+		},
+		{
+			name: "map without mapstruct tag",
+			in: struct {
+				Items map[int]item `mask:"struct"`
+			}{
+				Items: map[int]item{1: {ID: "A123456789"}},
+			},
+			want: &struct {
+				Items map[int]item `mask:"struct"`
+			}{
+				Items: map[int]item{1: {ID: "A123456789"}},
+			},
+		},
+		{
+			name: "map with scalar values passes through unchanged",
+			in: struct {
+				Items map[string]string `mask:"mapstruct"`
+			}{Items: map[string]string{"key": "value"}},
+			want: &struct {
+				Items map[string]string `mask:"mapstruct"`
+			}{Items: map[string]string{"key": "value"}},
+		},
+		{
+			name: "map pointer values",
+			in: struct {
+				Items map[int]*item `mask:"mapstruct"`
+			}{
+				Items: map[int]*item{
+					1: {ID: "A123456789"},
+					2: nil,
+				},
+			},
+			want: &struct {
+				Items map[int]*item `mask:"mapstruct"`
+			}{
+				Items: map[int]*item{
+					1: {ID: "A12345****"},
+					2: nil,
+				},
+			},
+		},
+		{
+			name: "map slice values",
+			in: struct {
+				Items map[int][]item `mask:"mapstruct"`
+			}{
+				Items: map[int][]item{
+					1: {{ID: "A123456789"}, {ID: "B223456789"}},
+					2: {{ID: "C323456789"}},
+				},
+			},
+			want: &struct {
+				Items map[int][]item `mask:"mapstruct"`
+			}{
+				Items: map[int][]item{
+					1: {{ID: "A12345****"}, {ID: "B22345****"}},
+					2: {{ID: "C32345****"}},
+				},
+			},
+		},
+		{
+			name: "nil map slice values",
+			in: struct {
+				Items map[int][]item `mask:"mapstruct"`
+			}{
+				Items: nil,
+			},
+			want: &struct {
+				Items map[int][]item `mask:"mapstruct"`
+			}{
+				Items: nil,
+			},
+		},
+		{
+			name: "map pointer to slice values",
+			in: func() interface{} {
+				items := []item{{ID: "A123456789"}, {ID: "B223456789"}}
+				return struct {
+					Items map[int]*[]item `mask:"mapstruct"`
+				}{
+					Items: map[int]*[]item{
+						1: &items,
+						2: nil,
+					},
+				}
+			}(),
+			want: func() interface{} {
+				items := []item{{ID: "A12345****"}, {ID: "B22345****"}}
+				return &struct {
+					Items map[int]*[]item `mask:"mapstruct"`
+				}{
+					Items: map[int]*[]item{
+						1: &items,
+						2: nil,
+					},
+				}
+			}(),
+		},
+		{
+			name: "map of map with slice values",
+			in: struct {
+				Items map[int]map[int][]item `mask:"mapstruct"`
+			}{
+				Items: map[int]map[int][]item{
+					1: {
+						10: {{ID: "A123456789"}, {ID: "B223456789"}},
+						11: nil,
+					},
+					2: nil,
+				},
+			},
+			want: &struct {
+				Items map[int]map[int][]item `mask:"mapstruct"`
+			}{
+				Items: map[int]map[int][]item{
+					1: {
+						10: {{ID: "A12345****"}, {ID: "B22345****"}},
+						11: nil,
+					},
+					2: nil,
+				},
+			},
+		},
+		{
+			name: "multi-level map with pointer slice leaves",
+			in: func() interface{} {
+				a := []item{{ID: "A123456789"}}
+				b := []item{{ID: "B223456789"}, {ID: "C323456789"}}
+				return struct {
+					Items map[int]map[string]map[int]*[]item `mask:"mapstruct"`
+				}{
+					Items: map[int]map[string]map[int]*[]item{
+						1: {
+							"x": {
+								100: &a,
+								101: nil,
+							},
+						},
+						2: {
+							"y": {
+								200: &b,
+							},
+						},
+					},
+				}
+			}(),
+			want: func() interface{} {
+				a := []item{{ID: "A12345****"}}
+				b := []item{{ID: "B22345****"}, {ID: "C32345****"}}
+				return &struct {
+					Items map[int]map[string]map[int]*[]item `mask:"mapstruct"`
+				}{
+					Items: map[int]map[string]map[int]*[]item{
+						1: {
+							"x": {
+								100: &a,
+								101: nil,
+							},
+						},
+						2: {
+							"y": {
+								200: &b,
+							},
+						},
+					},
+				}
+			}(),
+		},
+	}
+
+	m := NewMaskerMarshaler()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := m.Struct(tt.in)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MaskerMarshaler.Struct() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
