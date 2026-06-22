@@ -10,8 +10,8 @@ func TestParseGenericMask(t *testing.T) {
 		matched bool
 		wantErr bool
 	}{
-		{tag: "all", value: "hello", want: "*****", matched: true},
-		{tag: "all", value: "", want: "", matched: true},
+		{tag: "all", value: "hello", want: "", matched: false},
+		{tag: "all", value: "", want: "", matched: false},
 		{tag: "first-3", value: "hello", want: "***lo", matched: true},
 		{tag: "first-0", value: "hello", want: "hello", matched: true},
 		{tag: "first-10", value: "hello", want: "*****", matched: true},

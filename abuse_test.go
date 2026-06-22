@@ -252,3 +252,21 @@ func BenchmarkAbuseMasker(b *testing.B) {
 		masker.Marshal("*", text)
 	}
 }
+
+func TestAbuseMasker_NoSubstringMatch(t *testing.T) {
+	masker := NewAbuseMaskerWithWords([]string{"bad"})
+	got := masker.Marshal("*", "bad badminton")
+	want := "*** badminton"
+	if got != want {
+		t.Errorf("got = %q, want %q", got, want)
+	}
+}
+
+func TestAbuseMasker_PreservesWhitespace(t *testing.T) {
+	masker := NewAbuseMaskerWithWords([]string{"bad"})
+	got := masker.Marshal("*", "  bad  good  bad  ")
+	want := "  ***  good  ***  "
+	if got != want {
+		t.Errorf("got = %q, want %q", got, want)
+	}
+}

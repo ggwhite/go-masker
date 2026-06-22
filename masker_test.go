@@ -2,6 +2,7 @@ package masker
 
 import (
 	"reflect"
+	"sync"
 	"testing"
 )
 
@@ -779,4 +780,133 @@ func TestMaskerMarshaler_MapStructs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStruct_TypedNilPointer(t *testing.T) {
+	type inner struct {
+		Name string `mask:"name"`
+	}
+	m := NewMaskerMarshaler()
+	_, err := m.Struct((*inner)(nil))
+	if err == nil {
+		t.Fatal("expected error for typed-nil pointer, got nil")
+	}
+}
+
+func TestStruct_SlicePtrNilElement(t *testing.T) {
+	type inner struct {
+		Name string `mask:"name"`
+	}
+	type outer struct {
+		Items []*inner `mask:"struct"`
+	}
+	m := NewMaskerMarshaler()
+	in := outer{Items: []*inner{{Name: "John"}, nil, {Name: "Jane"}}}
+	got, err := m.Struct(in)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result := got.(*outer)
+	if result.Items[0].Name != "J**n" {
+		t.Errorf("Items[0].Name = %v, want J**n", result.Items[0].Name)
+	}
+	if result.Items[1] != nil {
+		t.Errorf("Items[1] = %v, want nil", result.Items[1])
+	}
+	if result.Items[2].Name != "J**e" {
+		t.Errorf("Items[2].Name = %v, want J**e", result.Items[2].Name)
+	}
+}
+
+func TestStruct_StructFieldWithNonStructTag(t *testing.T) {
+	type inner struct {
+		Value string
+	}
+	type outer struct {
+		Data inner `mask:"name"`
+	}
+	m := NewMaskerMarshaler()
+	in := outer{Data: inner{Value: "hello"}}
+	got, err := m.Struct(in)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result := got.(*outer)
+	if result.Data.Value != "hello" {
+		t.Errorf("Data.Value = %v, want hello (should be copied as-is)", result.Data.Value)
+	}
+}
+
+func TestStruct_PtrFieldWithNonStructTag(t *testing.T) {
+	type inner struct {
+		Value string
+	}
+	type outer struct {
+		Data *inner `mask:"name"`
+	}
+	m := NewMaskerMarshaler()
+	in := outer{Data: &inner{Value: "hello"}}
+	got, err := m.Struct(in)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result := got.(*outer)
+	if result.Data == nil {
+		t.Fatal("Data is nil, expected to be copied")
+	}
+	if result.Data.Value != "hello" {
+		t.Errorf("Data.Value = %v, want hello (should be copied as-is)", result.Data.Value)
+	}
+}
+
+func TestStruct_SliceOfIntPreserved(t *testing.T) {
+	type data struct {
+		Scores []int `mask:"all"`
+	}
+	m := NewMaskerMarshaler()
+	in := data{Scores: []int{1, 2, 3}}
+	got, err := m.Struct(in)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result := got.(*data)
+	if !reflect.DeepEqual(result.Scores, []int{1, 2, 3}) {
+		t.Errorf("Scores = %v, want [1 2 3] (should be copied as-is)", result.Scores)
+	}
+}
+
+func TestMarshal_AllMaskerOverridable(t *testing.T) {
+	m := NewMaskerMarshaler()
+	m.Register(MaskerTypeAll, &NoneMasker{})
+	got, err := m.Marshal(MaskerTypeAll, "secret")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "secret" {
+		t.Errorf("got = %v, want secret (custom AllMasker should return as-is)", got)
+	}
+}
+
+func TestMarshal_AbuseMaskerDefault(t *testing.T) {
+	m := NewMaskerMarshaler()
+	got, err := m.Marshal(MaskerTypeAbuse, "hello world")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "hello world" {
+		t.Errorf("got = %v, want hello world (empty trie should not mask)", got)
+	}
+}
+
+func TestMaskerMarshaler_ConcurrentMarshal(t *testing.T) {
+	m := NewMaskerMarshaler()
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, _ = m.Marshal(MaskerTypeName, "John Doe")
+		}()
+	}
+	wg.Wait()
 }

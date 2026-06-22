@@ -19,17 +19,12 @@ func (m *AllMasker) Marshal(s, i string) string {
 }
 
 // parseGenericMask handles dynamic tag patterns that do not map to a registered Masker:
-//   - "all"      — mask every character
 //   - "first-N"  — mask the first N characters
 //   - "last-N"   — mask the last N characters
 //
 // Returns (maskedValue, true, nil) on match, ("", false, nil) when the tag is not a dynamic pattern,
 // or ("", false, err) when the pattern is recognized but N is invalid.
 func parseGenericMask(maskChar, tag, value string) (string, bool, error) {
-	if tag == "all" {
-		return strLoop(maskChar, len([]rune(value))), true, nil
-	}
-
 	if strings.HasPrefix(tag, "first-") {
 		n, err := strconv.Atoi(strings.TrimPrefix(tag, "first-"))
 		if err != nil || n < 0 {

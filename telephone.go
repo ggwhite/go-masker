@@ -16,12 +16,13 @@ func (m *TelephoneMasker) Marshal(s string, i string) string {
 		return ""
 	}
 
-	i = strings.Replace(i, " ", "", -1)
-	i = strings.Replace(i, "(", "", -1)
-	i = strings.Replace(i, ")", "", -1)
-	i = strings.Replace(i, "-", "", -1)
+	i = strings.ReplaceAll(i, " ", "")
+	i = strings.ReplaceAll(i, "(", "")
+	i = strings.ReplaceAll(i, ")", "")
+	i = strings.ReplaceAll(i, "-", "")
 
-	l = len([]rune(i))
+	r := []rune(i)
+	l = len(r)
 
 	if l != 10 && l != 8 {
 		return i
@@ -31,14 +32,14 @@ func (m *TelephoneMasker) Marshal(s string, i string) string {
 
 	if l == 10 {
 		ans += "("
-		ans += i[:2]
+		ans += string(r[:2])
 		ans += ")"
-		i = i[2:]
+		r = r[2:]
 	}
 
-	ans += i[:4]
+	ans += string(r[:4])
 	ans += "-"
-	ans += "****"
+	ans += strLoop(s, 4)
 
 	return ans
 }

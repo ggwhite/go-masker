@@ -129,7 +129,10 @@ func (m *AbuseMasker) AddWord(word string) {
 }
 
 // Marshal masks abuse words in the given text
-// It replaces abuse words with the specified mask character
+// It replaces abuse words with the specified mask character.
+// Only whole tokens (delimited by whitespace) are replaced; substrings inside
+// longer words are never masked.
+//
 // Example:
 //
 //	abuseMasker := NewAbuseMaskerWithWords([]string{"bad", "terrible"})
@@ -139,17 +142,34 @@ func (m *AbuseMasker) Marshal(maskChar string, text string) string {
 		return text
 	}
 
-	// Find all abuse words in the text
-	abuseWords := m.trie.findAbuseWords(text)
+	runes := []rune(text)
+	var result strings.Builder
+	result.Grow(len(text))
+	i := 0
 
-	// Replace each abuse word with masked version
-	result := text
-	for _, abuseWord := range abuseWords {
-		maskedWord := strLoop(maskChar, len([]rune(abuseWord)))
-		result = strings.ReplaceAll(result, abuseWord, maskedWord)
+	for i < len(runes) {
+		if unicode.IsSpace(runes[i]) {
+			result.WriteRune(runes[i])
+			i++
+			continue
+		}
+
+		j := i
+		for j < len(runes) && !unicode.IsSpace(runes[j]) {
+			j++
+		}
+
+		word := string(runes[i:j])
+		cleaned := cleanWord(word)
+		if cleaned != "" && m.trie.Contains(cleaned) {
+			result.WriteString(strLoop(maskChar, j-i))
+		} else {
+			result.WriteString(word)
+		}
+		i = j
 	}
 
-	return result
+	return result.String()
 }
 
 // ContainsAbuse checks if the text contains any abuse words

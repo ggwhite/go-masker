@@ -3,6 +3,8 @@ package masker
 import (
 	"fmt"
 	"reflect"
+	"strings"
+	"sync"
 )
 
 const tagName = "mask"
@@ -33,8 +35,11 @@ type Masker interface {
 	Marshal(string, string) string
 }
 
-// MaskerMarshaler is a masker marshaler
+// MaskerMarshaler is a masker marshaler.
+// All exported methods are safe for concurrent use.
+// Direct access to the Maskers field is NOT concurrency-safe; use Register/Get instead.
 type MaskerMarshaler struct {
+	mu      sync.RWMutex
 	Maskers map[MaskerType]Masker
 	masker  string // default masker
 }
@@ -55,6 +60,8 @@ type MaskerMarshaler struct {
 //	log.Println(m.Marshal(masker.MaskerTypeCredit, "4111111111111111"))                 // 411111******1111 <nil>
 //	log.Println(m.Marshal(masker.MaskerTypeURL, "http://john:password@localhost:3000")) // http://john:xxxxx@localhost:3000 <nil>
 func (m *MaskerMarshaler) Marshal(t MaskerType, value string) (string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	if result, matched, err := parseGenericMask(m.masker, string(t), value); matched {
 		return result, err
 	}
@@ -73,6 +80,8 @@ func (m *MaskerMarshaler) Marshal(t MaskerType, value string) (string, error) {
 //	m.Register(masker.MaskerTypePassword, &PasswordMasker{})
 //	log.Println(m.List()) // [password name addr email tel id url none mobile credit]
 func (m *MaskerMarshaler) Register(t MaskerType, masker Masker) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.Maskers[t] = masker
 }
 
@@ -84,6 +93,8 @@ func (m *MaskerMarshaler) Register(t MaskerType, masker Masker) {
 //	m.Unregister(masker.MaskerTypePassword)
 //	log.Println(m.List()) // [name addr email tel id url none mobile credit]
 func (m *MaskerMarshaler) Unregister(t MaskerType) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	delete(m.Maskers, t)
 }
 
@@ -95,6 +106,8 @@ func (m *MaskerMarshaler) Unregister(t MaskerType) {
 //	masker, _ := m.Get(masker.MaskerTypePassword)
 //	log.Println(masker) // &{PasswordMasker}
 func (m *MaskerMarshaler) Get(t MaskerType) (Masker, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	masker, ok := m.Maskers[t]
 	if !ok {
 		return nil, fmt.Errorf("masker %v not found", t)
@@ -109,6 +122,8 @@ func (m *MaskerMarshaler) Get(t MaskerType) (Masker, error) {
 //	m := masker.NewMaskerMarshaler()
 //	log.Println(m.List()) // [password name addr email tel id url none mobile credit]
 func (m *MaskerMarshaler) List() []MaskerType {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	var list []MaskerType
 	for t := range m.Maskers {
 		list = append(list, t)
@@ -117,6 +132,8 @@ func (m *MaskerMarshaler) List() []MaskerType {
 }
 
 func (m *MaskerMarshaler) SetMasker(masker string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.masker = masker
 }
 
@@ -183,9 +200,13 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 	var selem, tptr reflect.Value
 
 	st := reflect.TypeOf(s)
+	sv := reflect.ValueOf(s)
 
 	actualKind := st.Kind()
 	if actualKind == reflect.Ptr {
+		if sv.IsNil() {
+			return nil, fmt.Errorf("input is nil pointer")
+		}
 		actualKind = st.Elem().Kind()
 	}
 	if actualKind != reflect.Struct {
@@ -194,10 +215,10 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 
 	if st.Kind() == reflect.Ptr {
 		tptr = reflect.New(st.Elem())
-		selem = reflect.ValueOf(s).Elem()
+		selem = sv.Elem()
 	} else {
 		tptr = reflect.New(st)
-		selem = reflect.ValueOf(s)
+		selem = sv
 	}
 
 	for i := 0; i < selem.NumField(); i++ {
@@ -226,6 +247,8 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 					return nil, err
 				}
 				tptr.Elem().Field(i).Set(reflect.ValueOf(_t).Elem())
+			} else {
+				tptr.Elem().Field(i).Set(selem.Field(i))
 			}
 		case reflect.Ptr:
 			if selem.Field(i).IsNil() {
@@ -237,6 +260,8 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 					return nil, err
 				}
 				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+			} else {
+				tptr.Elem().Field(i).Set(selem.Field(i))
 			}
 		case reflect.Map:
 			if selem.Field(i).IsNil() {
@@ -290,6 +315,10 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 			case selem.Field(i).Type().Elem().Kind() == reflect.Ptr && MaskerType(mtag) == MaskerTypeStruct:
 				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
 				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
+					if selem.Field(i).Index(j).IsNil() {
+						newval = reflect.Append(newval, selem.Field(i).Index(j))
+						continue
+					}
 					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
 					if err != nil {
 						return nil, err
@@ -311,6 +340,8 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 					}
 				}
 				tptr.Elem().Field(i).Set(newval)
+			default:
+				tptr.Elem().Field(i).Set(selem.Field(i))
 			}
 		case reflect.Interface:
 			if selem.Field(i).IsNil() {
@@ -420,59 +451,24 @@ func NewMaskerMarshaler() *MaskerMarshaler {
 			MaskerTypeID:       &IDMasker{},
 			MaskerTypeCredit:   &CreditMasker{},
 			MaskerTypeURL:      &URLMasker{},
-			MaskerTypeAbuse:    &AbuseMasker{},
+			MaskerTypeAbuse:    NewAbuseMasker(),
 			MaskerTypeAll:      &AllMasker{},
 		},
 		masker: "*",
 	}
 }
 
-// DefaultMaskerMarshaler is a default masker marshaler
-// It has default maskers and default masker
-// Default maskers are:
-//   - NoneMasker
-//   - PasswordMasker
-//   - NameMasker
-//   - AddressMasker
-//   - EmailMasker
-//   - MobileMasker
-//   - TelephoneMasker
-//   - IDMasker
-//   - CreditMasker
-//   - URLMasker
-//   - AbuseMasker
-//
-// Default masker is "*"
-// It is used for masking sensitive data
-var DefaultMaskerMarshaler = &MaskerMarshaler{
-	Maskers: map[MaskerType]Masker{
-		MaskerTypeNone:     &NoneMasker{},
-		MaskerTypePassword: &PasswordMasker{},
-		MaskerTypeName:     &NameMasker{},
-		MaskerTypeAddress:  &AddressMasker{},
-		MaskerTypeEmail:    &EmailMasker{},
-		MaskerTypeMobile:   &MobileMasker{},
-		MaskerTypeTel:      &TelephoneMasker{},
-		MaskerTypeID:       &IDMasker{},
-		MaskerTypeCredit:   &CreditMasker{},
-		MaskerTypeURL:      &URLMasker{},
-		MaskerTypeAbuse:    &AbuseMasker{},
-		MaskerTypeAll:      &AllMasker{},
-	},
-	masker: "*",
-}
+// DefaultMaskerMarshaler is a default masker marshaler.
+// It has the same default maskers as NewMaskerMarshaler().
+var DefaultMaskerMarshaler = NewMaskerMarshaler()
 
 func strLoop(str string, length int) string {
-	var mask string
-	for i := 1; i <= length; i++ {
-		mask += str
-	}
-	return mask
+	return strings.Repeat(str, length)
 }
 
-func overlay(str string, overlay string, start int, end int) (overlayed string) {
+func overlay(str string, overlay string, start int, end int) string {
 	r := []rune(str)
-	l := len([]rune(r))
+	l := len(r)
 
 	if l == 0 {
 		return ""
@@ -491,14 +487,8 @@ func overlay(str string, overlay string, start int, end int) (overlayed string) 
 		end = l
 	}
 	if start > end {
-		tmp := start
-		start = end
-		end = tmp
+		start, end = end, start
 	}
 
-	overlayed = ""
-	overlayed += string(r[:start])
-	overlayed += overlay
-	overlayed += string(r[end:])
-	return overlayed
+	return string(r[:start]) + overlay + string(r[end:])
 }

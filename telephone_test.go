@@ -55,3 +55,12 @@ func TestTelephoneMasker_Marshal(t *testing.T) {
 		})
 	}
 }
+
+func TestTelephoneMasker_CustomMaskChar(t *testing.T) {
+	m := &TelephoneMasker{}
+	got := m.Marshal("#", "0227993078")
+	want := "(02)2799-####"
+	if got != want {
+		t.Errorf("got = %v, want %v", got, want)
+	}
+}
