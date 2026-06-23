@@ -475,10 +475,10 @@ func TestStruct_NilPreservation(t *testing.T) {
 		Name string `mask:"name"`
 	}
 	type holder struct {
-		Ptr   *inner            `mask:"struct"`
-		Slice []string          `mask:"id"`
-		Map   map[int]inner     `mask:"mapstruct"`
-		Plain string            `mask:"name"`
+		Ptr   *inner        `mask:"struct"`
+		Slice []string      `mask:"id"`
+		Map   map[int]inner `mask:"mapstruct"`
+		Plain string        `mask:"name"`
 	}
 	m := NewMaskerMarshaler()
 	out, err := m.Struct(&holder{Plain: "John Doe"})
