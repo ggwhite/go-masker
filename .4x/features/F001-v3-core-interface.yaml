@@ -14,47 +14,11 @@ description: |
     7. `first-N` / `last-N` generic mask 保留
     8. `Marshal()` 保留但精簡（考慮移除 error return 或加 `MustMarshal`）
 
-    ## v2 功能完整承繼（必須全部支援）
-
-    以下是 v2 截至 PR #38 的完整功能清單，v3 必須全部支援：
-
-    ### Masker Types（14 種）
-    - none, password, name, addr, email, mobile, tel, id, credit, url
-    - abuse — trie-based 敏感詞遮罩（PR #32）
-    - all — 全字元遮罩（PR #36）
-    - first-N, last-N — 動態 pattern（PR #36）
-
-    ### Structural Tags（2 種）
-    - `struct` — 遞迴遮罩巢狀 struct（支援 value type 和 pointer）
-    - `mapstruct` — 遞迴遮罩 map values（PR #38），支援：
-      - map → struct, map → *struct, map → []struct, map → *[]struct
-      - 巢狀 map（map → map → ... → struct）
-      - nil map / nil pointer / nil slice 保留
-
-    ### Struct() 處理能力
-    - string fields
-    - nested struct（value 和 pointer）
-    - []string slice
-    - []struct, []*struct, []interface{} slice（搭配 `struct` tag）
-    - map fields（搭配 `mapstruct` tag）
-    - interface{} fields（搭配 `struct` tag）
-    - nil 值保留（nil pointer, nil slice, nil map）
-    - 非 struct 輸入回傳 error 不 panic（PR #35）
-    - unexported fields 跳過不處理
-
-    ### API 表面
-    - `MaskerMarshaler`: Struct(), Marshal(), Register(), Unregister(), Get(), List(), SetMasker()
-    - `DefaultMaskerMarshaler` 全域預設實例
-    - `AbuseMasker`: NewAbuseMasker(), NewAbuseMaskerWithWords()
-    - `AbuseWordLoader`: LoadFromFile(), LoadFromReader()
-    - 自訂 mask character（SetMasker）
-    - Concurrency-safe（sync.RWMutex）
-
     ## 不做
 
-    - Sensitive[T]（獨立 feature F002）
-    - Struct() reflect cache（獨立 feature F003）
-    - Logger 整合（獨立 feature F004/F005）
+    - Sensitive[T]（獨立 feature）
+    - Struct() 改動（獨立 feature）
+    - Logger 整合（獨立 feature）
 
     ## 設計參考
 
@@ -76,26 +40,13 @@ subtasks:
     - id: migrate-maskers
       name: 遷移所有既有 masker 到新 interface
       status: not-started
-      description: >
-        14 種 masker type 全部遷移：
-        mobile/email/password/name/addr/id/credit/tel/url/none/abuse/all/first-N/last-N。
-        含 AbuseMasker trie + AbuseWordLoader（file/reader）
+      description: mobile/email/password/name/addr/id/credit/tel/url/none/abuse/all + generic
       depends:
         - new-masker-interface
-    - id: struct-masking
-      name: Struct() 完整遮罩能力遷移
-      status: not-started
-      description: >
-        v2 Struct() 全部能力：string/nested struct/ptr/slice(string/struct/ptr/interface)/
-        map values（mapstruct tag，含巢狀 map/struct/ptr/slice/ptr-to-slice）/
-        interface fields/nil 保留/非 struct 回 error/skip unexported。
-        遮罩邏輯不變，只改 interface 呼叫方式
-      depends:
-        - migrate-maskers
     - id: convenience-functions
       name: Package-level 便利函式
       status: not-started
-      description: masker.Mobile(), masker.Email() 等頂層函式 + masker.Mask(typeName, value) 動態版
+      description: masker.Mobile(), masker.Email() 等頂層函式
       depends:
         - migrate-maskers
     - id: marshal-cleanup
@@ -103,25 +54,9 @@ subtasks:
       status: not-started
       description: 精簡 MaskerMarshaler 的公開 API
       depends:
-        - struct-masking
+        - migrate-maskers
 rules:
     - 所有既有 masker 的遮罩邏輯不變，只改 interface 簽名
     - core package 零外部依賴
     - 所有 exported 函式必須有 GoDoc（繁體中文內容，名稱開頭）
     - 每個 masker 保留獨立檔案（mobile.go, email.go...）
-    - v2 所有測試案例必須在 v3 有對應覆蓋
-acceptance:
-    - go mod tidy 成功，go.mod 顯示 go 1.21
-    - 所有 14 種 masker type 遮罩結果與 v2 一致
-    - masker.Mobile('0987654321') 回傳 '0987***321'
-    - masker.Email('ggw@gmail.com') 回傳 'ggw****@gmail.com'
-    - 所有 v2 masker type 都有對應的 package-level 函式
-    - 自訂 masker 可透過 Register() + 新 Masker interface 註冊
-    - Struct() 支援 mapstruct tag（巢狀 map/struct/ptr/slice）
-    - Struct() 支援 struct tag 遞迴（value/ptr/slice/interface）
-    - Struct() 非 struct 輸入回傳 error
-    - AbuseMasker + AbuseWordLoader 功能完整保留
-    - SetMasker() 自訂 mask char 正常運作
-    - concurrent 呼叫無 race（go test -race）
-    - go test ./... 全部通過，coverage ≥ 80%
-    - go vet 無警告
