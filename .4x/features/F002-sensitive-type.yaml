@@ -46,7 +46,7 @@ description: |
 
     sms.Send(req.Phone.Reveal())  // 用原值
     ```
-status: ready-for-review
+status: done
 priority: 0
 subtasks:
     - id: sensitive-struct
