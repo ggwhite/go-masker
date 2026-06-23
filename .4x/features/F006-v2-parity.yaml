@@ -24,7 +24,7 @@ description: |
     ## 驗收方式
 
     把 v2 所有測試案例移植到 v3，逐項對照 docs/design/v2-parity.md 勾選。
-status: in-progress
+status: ready-for-review
 priority: 0
 subtasks:
     - id: struct-migration
