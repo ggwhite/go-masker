@@ -1,5 +1,5 @@
 id: F012-sensitive-redact-mode
-name: "F012 Sensitive[T] Redact 模式"
+name: F012 Sensitive[T] Redact 模式
 description: |
     Sensitive[T] 支援完全替換模式，輸出 [REDACTED] 而非部分遮罩。
 
@@ -28,8 +28,9 @@ description: |
     - redact 是建構時決定，不可事後切換（避免 race）
     - [REDACTED] 字串可透過 WithRedactText("***") 自訂
     - JSON output: `"[REDACTED]"` 或 `null`？→ 預設字串，可配置
-status: not-started
+status: in-progress
 priority: 5
+profile: quick
 subtasks:
     - id: option
       name: WithRedact / WithRedactText option
@@ -51,4 +52,3 @@ rules:
     - Reveal() 永遠回傳原值，不受 redact 影響
     - redact flag 建構時決定，不可變
     - 預設替換文字為 [REDACTED]
-depends: []
