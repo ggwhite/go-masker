@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Features
+### Features (v3)
 
 - **v3 module** — 全新 `github.com/ggwhite/go-masker/v3`（Go 1.21+），包含：
   - 新 `Masker` interface：`Mask(value string) string`（移除 mask char 參數）
@@ -17,26 +17,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Sensitive[T] 泛型安全型別** — 把遮罩從「開發者記得做」變成「洩漏要刻意寫 `.Reveal()`」，自動安全輸出至 fmt/json/slog
 - **zapfield sub-module** — `github.com/ggwhite/go-masker/v3/zapfield`，提供 zap Field helpers 與 `Sensitive[T]` adapter
 - **zap Core interceptor** — `WrapCore` 以 keyword/regex 攔截 log field 的最後一道防線
-- **v2 Struct() reflect cache** — 首次解析 type metadata 後快取，重複呼叫效能提升 ≥ 50%
-- **v2 Format()** — 直接輸出遮罩後字串，不配置新 struct，適合 log/debug 場景
-- **mapstruct tag** — 遞迴遮罩 map values，支援巢狀 map/struct/ptr/slice 組合
+
+### Fixes (v3)
+
+- **abuse trie data race** — AbuseMasker 加 sync.RWMutex，防止 AddWord 與 Mask 併發存取
+- **interface{} 欄位歸零** — Struct() 不再靜默歸零非 struct tag 的 interface 欄位，改為遮罩底層 string
+- **maskMapStructValue 漏處理 Interface** — 加入 reflect.Interface case 解包遞迴
+- **email Split 丟失多 '@' 後段** — 改用 SplitN 保留完整 domain
+- **Sensitive UnmarshalJSON nil mask** — mask 未綁定時回傳 error 而非靜默空值
+- **Maskers 欄位 data race** — unexport 為 maskers，強制走 Register/Get
+
+## [2.4.0] - 2026-06-23
+
+### Features
+
+- **mapstruct tag** — 遞迴遮罩 map values，支援巢狀 map/struct/ptr/slice/ptr-to-slice 組合 (#38)
+- **Struct() reflect cache** — 首次解析 type metadata 後快取（sync.Map），重複呼叫同型別效能提升 ≥ 50%
+- **Format()** — 直接輸出遮罩後確定性字串，不配置新 struct，適合 log/debug 場景
 
 ### Fixes
 
-- **v3 abuse trie data race** — AbuseMasker 加 sync.RWMutex，防止 AddWord 與 Mask 併發存取
-- **v3 interface{} 欄位歸零** — Struct() 不再靜默歸零非 struct tag 的 interface 欄位，改為遮罩底層 string
-- **v3 maskMapStructValue 漏處理 Interface** — 加入 reflect.Interface case 解包遞迴
-- **v3 email Split 丟失多 '@' 後段** — 改用 SplitN 保留完整 domain
-- **v3 Sensitive UnmarshalJSON nil mask** — mask 未綁定時回傳 error 而非靜默空值
-- **v3 Maskers 欄位 data race** — unexport 為 maskers，強制走 Register/Get
-- **v2 Format() 洩漏敏感資料** — Marshal 失敗時輸出 mask chars 而非原始值
-- **v2 十項 code review bug 修正** — 含 Struct() non-struct panic、nil handling 等
-
-### Internal
-
-- **4x 開發流程** — 設定 features（F001–F006）、settings.json、profiles、roles
-- **LLM wiki** — `docs/` 目錄結構化管理（AGENTS.md 治理 + architecture/api/masker-types 文件）
-- **Claude Code 專案設定** — `.claude/settings.json` 權限、release skill
+- **Format() 敏感資料洩漏** — Marshal 失敗時改輸出 mask chars，不再回傳原始值
+- **Format() dead code** — 移除 writeMaskedField 中永遠不會到達的 reflect.String 分支
+- **10 項 code review 修正** — 含 Struct() non-struct input panic、nil handling、telephone 格式等
 
 ## [2.3.1] - 2026-04-20
 
