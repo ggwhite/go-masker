@@ -1,4 +1,4 @@
-# Go Masker v2
+# Go Masker
 
 [![build workflow](https://github.com/ggwhite/go-masker/actions/workflows/go.yml/badge.svg)](https://github.com/ggwhite/go-masker/actions)
 [![GoDoc](https://godoc.org/github.com/ggwhite/go-masker?status.svg)](https://godoc.org/github.com/ggwhite/go-masker)
@@ -6,12 +6,16 @@
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/ggwhite/go-masker/blob/master/LICENSE)
 [![Release](https://img.shields.io/github/release/ggwhite/go-masker.svg?style=flat-square)](https://github.com/ggwhite/go-masker/releases/latest)
 
-Go Masker v2 is a simple and extensible library for masking sensitive data in Go structs. Use struct tags to control how fields are masked — passwords, emails, IDs, credit cards, and more.
+Go Masker is a simple and extensible library for masking sensitive data in Go structs. Use struct tags to control how fields are masked — passwords, emails, IDs, credit cards, and more.
 
-- [Go Masker v2](#go-masker-v2)
+> Looking for v2? See the [`release/v2`](https://github.com/ggwhite/go-masker/tree/release/v2) branch.
+
+- [Go Masker](#go-masker)
   - [Install](#install)
   - [Quick Start](#quick-start)
+  - [Format — Log-Friendly Output](#format--log-friendly-output)
   - [Masker Types](#masker-types)
+    - [Dynamic Mask Tags](#dynamic-mask-tags)
     - [Masking Slices](#masking-slices)
     - [Masking Nested Structs](#masking-nested-structs)
     - [Masking Maps](#masking-maps)
@@ -21,6 +25,8 @@ Go Masker v2 is a simple and extensible library for masking sensitive data in Go
     - [Load Words from File](#load-words-from-file)
     - [Use with Struct Tags](#use-with-struct-tags)
   - [Custom Masker](#custom-masker)
+  - [Performance](#performance)
+  - [Migration from v2](#migration-from-v2)
   - [Contributors](#contributors)
 
 ## Install
@@ -29,13 +35,16 @@ Go Masker v2 is a simple and extensible library for masking sensitive data in Go
 go get -u github.com/ggwhite/go-masker/v2
 ```
 
+Requires Go 1.17+.
+
 ## Quick Start
 
 ```go
 package main
 
 import (
-    "log"
+    "fmt"
+
     masker "github.com/ggwhite/go-masker/v2"
 )
 
@@ -54,12 +63,16 @@ func main() {
         Mobile:   "0987654321",
     }
 
+    // Option 1: Get a masked copy of the struct
     m := masker.NewMaskerMarshaler()
     masked, err := m.Struct(u)
     if err != nil {
-        log.Fatal(err)
+        panic(err)
     }
-    log.Println(masked) // &{J**n D**e joh****@gmail.com ************** 0987***321}
+    fmt.Println(masked) // &{J**n D**e joh****@gmail.com ************** 0987***321}
+
+    // Option 2: Get a masked string directly (great for logging)
+    fmt.Println(m.Format(u)) // &{J**n D**e joh****@gmail.com ************** 0987***321}
 }
 ```
 
@@ -69,23 +82,67 @@ You can also use the package-level default instance:
 masked, err := masker.DefaultMaskerMarshaler.Struct(u)
 ```
 
+## Format — Log-Friendly Output
+
+`Format()` returns a deterministic masked string without allocating a new struct — ideal for logging and debugging:
+
+```go
+m := masker.NewMaskerMarshaler()
+
+type Foo struct {
+    Name  string `mask:"name"`
+    Email string `mask:"email"`
+    Self  *Foo   `mask:"struct"`
+}
+
+foo := &Foo{
+    Name:  "John Doe",
+    Email: "john@gmail.com",
+    Self:  &Foo{Name: "Jane Doe", Email: "jane@gmail.com"},
+}
+
+fmt.Println(m.Format(foo))
+// &{J**n D**e joh****@gmail.com &{J**e D**e jan****@gmail.com <nil>}}
+```
+
+- Pointer-to-struct fields are expanded as `&{...}` (no memory address)
+- `nil` pointers display as `<nil>`
+- Output is deterministic — same input always produces the same string
+
 ## Masker Types
 
-| Tag         | Description                                                                                                | Example Input                    | Example Output                  |
-| ----------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------- |
-| `none`      | No masking, return as-is                                                                                   | `foo`                            | `foo`                           |
-| `password`  | Always returns 14 asterisks                                                                                | `secret`                         | `**************`                |
-| `name`      | Masks middle characters                                                                                    | `John Doe`                       | `J**n D**e`                     |
-| `addr`      | Masks last 6 characters                                                                                    | `台北市內湖區內湖路一段737巷1號` | `台北市內湖區內湖路一段7******` |
-| `email`     | Keeps first 3 chars and domain                                                                             | `john@gmail.com`                 | `joh****@gmail.com`             |
-| `mobile`    | Masks 3 digits from 4th position                                                                           | `0987654321`                     | `0987***321`                    |
-| `tel`       | Formats and masks last 4 digits                                                                            | `0227993078`                     | `(02)2799-****`                 |
-| `id`        | Masks digits 7–10                                                                                          | `A123456789`                     | `A12345****`                    |
-| `credit`    | Masks digits 7–12                                                                                          | `4111111111111111`               | `411111******1111`              |
-| `url`       | Masks URL password                                                                                         | `http://user:pass@host`          | `http://user:xxxxx@host`        |
-| `abuse`     | Masks abusive words via trie                                                                               | `bad word`                       | `*** word`                      |
-| `struct`    | Recursively masks nested struct                                                                            | —                                | —                               |
-| `mapstruct` | Recursively masks map values (supports nested maps, structs, pointers, slices, and pointer-to-slice forms) | —                                | —                               |
+| Tag         | Description                      | Example Input                    | Example Output                  |
+| ----------- | -------------------------------- | -------------------------------- | ------------------------------- |
+| `none`      | No masking, return as-is         | `foo`                            | `foo`                           |
+| `password`  | Always returns 14 asterisks      | `secret`                         | `**************`                |
+| `name`      | Masks middle characters          | `John Doe`                       | `J**n D**e`                     |
+| `addr`      | Masks last 6 characters          | `台北市內湖區內湖路一段737巷1號` | `台北市內湖區內湖路一段7******` |
+| `email`     | Keeps first 3 chars and domain   | `john@gmail.com`                 | `joh****@gmail.com`             |
+| `mobile`    | Masks 3 digits from 4th position | `0987654321`                     | `0987***321`                    |
+| `tel`       | Formats and masks last 4 digits  | `0227993078`                     | `(02)2799-****`                 |
+| `id`        | Masks digits 7–10                | `A123456789`                     | `A12345****`                    |
+| `credit`    | Masks digits 7–12                | `4111111111111111`               | `411111******1111`              |
+| `url`       | Masks URL password               | `http://user:pass@host`          | `http://user:xxxxx@host`        |
+| `all`       | Replaces every character         | `secret`                         | `******`                        |
+| `abuse`     | Masks abusive words via trie     | `bad word`                       | `*** word`                      |
+| `struct`    | Recursively masks nested struct  | —                                | —                               |
+| `mapstruct` | Recursively masks map values     | —                                | —                               |
+
+### Dynamic Mask Tags
+
+Use `first-N` and `last-N` to mask a specific number of characters from the start or end:
+
+```go
+type Token struct {
+    Code   string `mask:"first-3"`  // masks first 3 chars
+    Suffix string `mask:"last-4"`   // masks last 4 chars
+}
+
+m := masker.NewMaskerMarshaler()
+masked, _ := m.Struct(&Token{Code: "ABC123", Suffix: "secret99"})
+// Code:   "***123"
+// Suffix: "secr****"
+```
 
 ### Masking Slices
 
@@ -112,18 +169,12 @@ type User struct {
 
 ### Masking Maps
 
-Use `mask:"mapstruct"` on map fields to recursively mask map values.
+Use `mask:"mapstruct"` on map fields to recursively mask map values:
 
-`mapstruct` tag limitations and rules:
-
-- Works only on fields whose own tag is exactly `mask:"mapstruct"`.
-- Recursion applies to map **values** only; map keys are never masked.
-- Recurses through `map`, `struct`, `ptr`, and `slice` combinations (including nested map and pointer-to-slice forms).
-- Leaf values that are not struct-like (for example `string`, `int`, `bool`, `time.Time` fields without mask tags) are kept as-is.
-- `nil` values are preserved (`nil` map, `nil` pointer, `nil` slice).
-- Struct masking still follows normal struct-tag rules: only exported fields are processed, and fields without `mask:"..."` stay unchanged.
-- `interface{}` map values are not force-unwrapped by `mapstruct`; if you need masking, prefer concrete types.
-- Cyclic object graphs are not specially handled; avoid self-referencing structures in recursive masking paths.
+- Recurses through `map`, `struct`, `ptr`, and `slice` combinations (including nested map and pointer-to-slice forms)
+- Map keys are never masked; only values are processed
+- `nil` values are preserved (`nil` map, `nil` pointer, `nil` slice)
+- Leaf values without mask tags are kept as-is
 
 ```go
 type Item struct {
@@ -245,6 +296,24 @@ type Person struct {
     SSN string `mask:"ssn"`
 }
 ```
+
+## Performance
+
+`Struct()` caches type metadata on first call via `sync.Map`, so repeated calls on the same struct type skip reflection overhead. Benchmarks show ≥ 50% improvement on subsequent calls.
+
+`Format()` avoids allocating a new struct entirely — it writes masked output directly to a `strings.Builder`, making it the better choice for log-only use cases.
+
+## Migration from v2
+
+The module path remains `github.com/ggwhite/go-masker/v2`. This release is backward-compatible — existing code works without changes.
+
+New features added since v2.2:
+
+| Version | Feature |
+|---------|---------|
+| v2.3.0  | `all`, `first-N`, `last-N` dynamic mask tags |
+| v2.4.0  | `mapstruct` recursive map masking |
+| v2.4.2  | `Format()` log-friendly output, `Struct()` type cache |
 
 ## Contributors
 
