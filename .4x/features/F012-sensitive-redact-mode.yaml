@@ -1,0 +1,54 @@
+id: F012-sensitive-redact-mode
+name: "F012 Sensitive[T] Redact 模式"
+description: |
+    Sensitive[T] 支援完全替換模式，輸出 [REDACTED] 而非部分遮罩。
+
+    ## 背景
+
+    部分遮罩（0987***321）適合內部 debug，但合規場景或對外 API response
+    需要完全替換，不洩漏任何部分資訊。
+
+    ## 目標
+
+    1. 新增 `WithRedact()` 建構選項
+    2. redact 模式下所有輸出（String/MarshalJSON/LogValue）回傳 `[REDACTED]`
+    3. Reveal() 不受影響，仍回傳原值
+
+    ## API
+
+    ```go
+    masker.NewPhone("0987654321")                        // String() → 0987***321
+    masker.NewPhone("0987654321", masker.WithRedact())   // String() → [REDACTED]
+
+    // 兩者的 Reveal() 都回傳 "0987654321"
+    ```
+
+    ## 設計考量
+
+    - redact 是建構時決定，不可事後切換（避免 race）
+    - [REDACTED] 字串可透過 WithRedactText("***") 自訂
+    - JSON output: `"[REDACTED]"` 或 `null`？→ 預設字串，可配置
+status: not-started
+priority: 5
+subtasks:
+    - id: option
+      name: WithRedact / WithRedactText option
+      status: not-started
+      description: Sensitive[T] 加 redact flag 和自訂文字
+    - id: output
+      name: 遮罩輸出邏輯
+      status: not-started
+      description: String/MarshalJSON/LogValue 在 redact 模式回傳替換文字
+      depends:
+        - option
+    - id: tests
+      name: 測試
+      status: not-started
+      description: 驗證 redact 模式下各輸出介面 + Reveal 不受影響
+      depends:
+        - output
+rules:
+    - Reveal() 永遠回傳原值，不受 redact 影響
+    - redact flag 建構時決定，不可變
+    - 預設替換文字為 [REDACTED]
+depends: []

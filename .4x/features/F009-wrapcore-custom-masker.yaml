@@ -1,0 +1,61 @@
+id: F009-wrapcore-custom-masker
+name: "F009 WrapCore 支援自訂 masker type"
+description: |
+    WrapCore 攔截規則支援指定 masker type，不再只能用 All 全遮罩。
+
+    ## 背景
+
+    現在 WrapCore 攔截到 keyword 就整串遮罩（TypeAll），
+    但 phone 用 `0987***321` 比 `**********` 更有 debug 價值。
+
+    ## 目標
+
+    1. Rule struct 新增 MaskerType 欄位（預設 TypeAll 維持向後相容）
+    2. 攔截時依 Rule 的 MaskerType 套用對應遮罩
+    3. 更新 WrapCore 測試驗證不同 masker type
+
+    ## API 變更
+
+    ```go
+    type Rule struct {
+        Keywords   []string
+        Patterns   []*regexp.Regexp
+        MaskerType masker.MaskerType  // 新增，預設 TypeAll
+    }
+
+    // 使用範例
+    zapfield.WrapCore(core, zapfield.InterceptRules{
+        Rules: []zapfield.Rule{
+            {Keywords: []string{"phone", "mobile"}, MaskerType: masker.TypeMobile},
+            {Keywords: []string{"password", "secret"}, MaskerType: masker.TypePassword},
+        },
+    })
+    ```
+
+    ## 向後相容
+
+    - MaskerType zero value 時行為與現在相同（全遮罩）
+    - 既有 API 不變
+status: not-started
+priority: 2
+subtasks:
+    - id: rule-field
+      name: Rule struct 加 MaskerType
+      status: not-started
+      description: 新增欄位，zero value 預設 TypeAll
+    - id: intercept-logic
+      name: 攔截邏輯套用指定 masker
+      status: not-started
+      description: core.go 的攔截邏輯改為依 rule 查對應 masker
+      depends:
+        - rule-field
+    - id: tests
+      name: 測試
+      status: not-started
+      description: 驗證不同 masker type 的攔截結果
+      depends:
+        - intercept-logic
+rules:
+    - 向後相容，MaskerType 未設時行為不變
+    - 不新增外部依賴
+depends: []

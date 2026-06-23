@@ -1,0 +1,76 @@
+id: F008-slogfield-module
+name: "F008 slogfield sub-module"
+description: |
+    zapfield 的 slog 版本，提供 slog.Attr helper 函式。
+
+    ## 背景
+
+    Go 標準庫往 slog 走，Sensitive[T] 已實作 slog.LogValuer，
+    但缺少跟 zapfield 對等的便利函式：
+
+    ```go
+    // zapfield 有
+    zapfield.Phone("phone", val)
+    // slog 缺
+    slogfield.Phone("phone", val) // → slog.Attr
+    ```
+
+    ## 目標
+
+    1. 建立 `slogfield/` sub-module（`github.com/ggwhite/go-masker/v3/slogfield`）
+    2. 對每個內建 masker type 提供 `func Xxx(key, value string) slog.Attr`
+    3. 提供 `Sensitive[T]` 的 slog.Attr adapter
+    4. 無外部依賴（slog 是 stdlib 1.21+）
+
+    ## 參考
+
+    - zapfield/ 目錄結構與 API 設計（平行對照）
+    - sensitive.go 的 LogValue() 實作
+
+    ## API 草案
+
+    ```go
+    package slogfield
+
+    func Phone(key, value string) slog.Attr
+    func Email(key, value string) slog.Attr
+    func Name(key, value string) slog.Attr
+    func ID(key, value string) slog.Attr
+    func Credit(key, value string) slog.Attr
+    func Password(key, value string) slog.Attr
+    func Address(key, value string) slog.Attr
+    func URL(key, value string) slog.Attr
+    func Masked(key string, maskerType masker.MaskerType, value string) slog.Attr
+    func SensitiveAttr[T any](key string, s masker.Sensitive[T]) slog.Attr
+    ```
+status: not-started
+priority: 1
+subtasks:
+    - id: module-scaffold
+      name: 建立 slogfield/ sub-module
+      status: not-started
+      description: go.mod、doc.go、基本目錄結構
+    - id: field-helpers
+      name: slog.Attr helper 函式
+      status: not-started
+      description: 對每個內建 masker type 提供對應函式
+      depends:
+        - module-scaffold
+    - id: sensitive-adapter
+      name: Sensitive[T] slog adapter
+      status: not-started
+      description: SensitiveAttr 泛型函式
+      depends:
+        - module-scaffold
+    - id: tests
+      name: 測試
+      status: not-started
+      description: 單元測試 + example test
+      depends:
+        - field-helpers
+        - sensitive-adapter
+rules:
+    - 無外部依賴，只用 stdlib
+    - API 命名與 zapfield 對齊
+    - 所有 exported function 必須有 GoDoc
+depends: []

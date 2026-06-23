@@ -1,0 +1,53 @@
+id: F010-sensitive-sql-scan
+name: "F010 Sensitive[T] SQL Scanner/Valuer"
+description: |
+    Sensitive[T] 實作 sql.Scanner + driver.Valuer，支援 GORM 等 ORM 直接使用。
+
+    ## 背景
+
+    現在 Sensitive[T] 支援 JSON marshal/unmarshal，但 DB 欄位要手動轉換。
+    實作 database/sql 的兩個介面後，ORM model 可直接宣告敏感欄位：
+
+    ```go
+    type Player struct {
+        Phone masker.Sensitive[string] `gorm:"column:phone"`
+    }
+    // db.Find → 自動 scan + 綁 mask
+    // logger.Info("player", zap.Any("p", player)) → phone 自動遮罩
+    ```
+
+    ## 目標
+
+    1. Sensitive[T] 實作 `sql.Scanner`（從 DB 值 scan 並自動綁定 mask）
+    2. Sensitive[T] 實作 `driver.Valuer`（寫入 DB 時輸出原始值）
+    3. 支援 T = string、int、int64、float64 等常見 DB 欄位型別
+    4. 無外部依賴（database/sql 是 stdlib）
+
+    ## 設計考量
+
+    - Scan 時如何知道用哪個 mask？→ 建構時已綁定（NewPhone / NewEmail 等）
+    - Value 時輸出原值（Reveal），不輸出遮罩值——DB 存的是明文
+    - nil/NULL 處理：Scan(nil) 應設為 zero value
+status: not-started
+priority: 3
+subtasks:
+    - id: scanner
+      name: 實作 sql.Scanner
+      status: not-started
+      description: Scan 方法，支援 string/int/float 型別轉換
+    - id: valuer
+      name: 實作 driver.Valuer
+      status: not-started
+      description: Value 方法，回傳 Reveal() 原值
+    - id: tests
+      name: 測試
+      status: not-started
+      description: 單元測試含 NULL handling、型別轉換
+      depends:
+        - scanner
+        - valuer
+rules:
+    - 無外部依賴
+    - Value() 必須回傳原值，不是遮罩值
+    - Scan(nil) 不 panic
+depends: []

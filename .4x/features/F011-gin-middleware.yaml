@@ -1,0 +1,79 @@
+id: F011-gin-middleware
+name: "F011 Gin middleware 自動遮罩 access log"
+description: |
+    Gin HTTP middleware，access log 自動遮罩 request/response body 的敏感欄位。
+
+    ## 背景
+
+    Kairos admin API 全走 Gin，每個 handler 手動遮罩 log 太容易遺漏。
+    middleware 攔截 request/response body，依 struct tag 或 keyword 規則自動遮罩後寫 log。
+
+    ## 目標
+
+    1. 建立 `ginmasker/` sub-module（`github.com/ggwhite/go-masker/v3/ginmasker`）
+    2. 提供 `ginmasker.Middleware(opts...)` 回傳 gin.HandlerFunc
+    3. 支援 request body 遮罩（JSON decode → mask → log）
+    4. 支援 response body 遮罩（攔截 ResponseWriter）
+    5. 可配置 keyword 規則（不依賴 struct tag，處理 map/untyped JSON）
+
+    ## 設計考量
+
+    - body 讀取後要 replay 給下游 handler（io.TeeReader / bytes.Buffer）
+    - 大 body 要有 size limit（預設 1MB？可配置）
+    - 非 JSON content-type 跳過
+    - 效能：只在 log level 允許時才做遮罩
+    - query string / header 遮罩為 optional（WithQueryMask / WithHeaderMask）
+
+    ## API 草案
+
+    ```go
+    package ginmasker
+
+    func Middleware(opts ...Option) gin.HandlerFunc
+
+    type Option func(*config)
+    func WithMaxBodySize(n int64) Option
+    func WithKeywords(keywords ...string) Option
+    func WithLogger(logger *zap.Logger) Option
+    func WithQueryMask(keys ...string) Option
+    func WithHeaderMask(keys ...string) Option
+    ```
+status: not-started
+priority: 4
+subtasks:
+    - id: module-scaffold
+      name: 建立 ginmasker/ sub-module
+      status: not-started
+      description: go.mod、doc.go、基本目錄結構
+    - id: request-mask
+      name: request body 遮罩
+      status: not-started
+      description: 攔截 request body，JSON decode → mask → log，replay 給下游
+      depends:
+        - module-scaffold
+    - id: response-mask
+      name: response body 遮罩
+      status: not-started
+      description: 攔截 ResponseWriter，遮罩後寫 log
+      depends:
+        - module-scaffold
+    - id: config
+      name: 配置選項
+      status: not-started
+      description: functional options、keyword 規則、size limit
+      depends:
+        - module-scaffold
+    - id: tests
+      name: 測試
+      status: not-started
+      description: 單元測試 + integration test with httptest
+      depends:
+        - request-mask
+        - response-mask
+        - config
+rules:
+    - 不修改 request/response 內容，只影響 log 輸出
+    - 非 JSON body 不處理
+    - body replay 不能吃掉下游 handler 的 body
+    - 大 body 超過 limit 時跳過遮罩
+depends: []
