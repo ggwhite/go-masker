@@ -1,3 +1,7 @@
+@.4x/plugins/copilot-AGENTS.md
+
+@.4x/plugins/codex-AGENTS.md
+
 # go-masker
 
 A Go library for masking sensitive data via struct tags.

@@ -1,3 +1,5 @@
+@.4x/plugins/CLAUDE.md
+
 # go-masker
 
 A Go library for masking sensitive data via struct tags.

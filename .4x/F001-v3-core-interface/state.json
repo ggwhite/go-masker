@@ -1,0 +1,19 @@
+{
+  "featureId": "F001-v3-core-interface",
+  "phase": "init",
+  "role": "",
+  "round": 0,
+  "maxRounds": 5,
+  "active": true,
+  "pid": 71356,
+  "runner": "claude",
+  "createdAt": "2026-06-23T16:28:38.452604+08:00",
+  "updatedAt": "2026-06-23T16:28:43.212549+08:00",
+  "since": "0001-01-01T00:00:00Z",
+  "consecutiveNoProgress": 0,
+  "lastFailCount": 0,
+  "runners": [
+    "claude"
+  ],
+  "profile": "full"
+}
