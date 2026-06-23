@@ -11,12 +11,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.17
+        go-version: '1.22'
 
     - name: Build
       run: go build -v ./...
@@ -24,20 +24,20 @@ jobs:
     - name: Test
       run: go test -v -race -short -count=1 -coverprofile=.cover ./...
 
-  build-v3:
+  build-zapfield:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.21
+        go-version: '1.22'
 
     - name: Build
       run: go build -v ./...
-      working-directory: v3
+      working-directory: zapfield
 
     - name: Test
       run: go test -v -race -short -count=1 -coverprofile=.cover ./...
-      working-directory: v3
+      working-directory: zapfield
