@@ -5,15 +5,15 @@
     "language": "go",
     "build": [
       "go build ./...",
-      "cd v3 && go build ./..."
+      "cd zapfield && go build ./..."
     ],
     "test": [
       "go test -race -count=1 ./...",
-      "cd v3 && go test -race -count=1 ./..."
+      "cd zapfield && go test -race -count=1 ./..."
     ],
     "lint": [
       "go vet ./...",
-      "cd v3 && go vet ./..."
+      "cd zapfield && go vet ./..."
     ],
     "docs": [
       "docs/AGENTS.md",
@@ -74,7 +74,7 @@
         "先讀 docs/AGENTS.md 和 docs/design/ 下相關文件了解架構",
         "task-brief 要具體到檔名和函式名，Coder 不需要猜",
         "acceptance-criteria 每項都要可自動化驗證（go test / CLI output）",
-        "v3 相關 feature 必須參照 docs/design/v3-design.md 和 docs/design/v2-parity.md"
+        "sub-module feature 參照 docs/design/ 下相關文件"
       ]
     },
     "design-reviewer": {
@@ -82,14 +82,14 @@
       "instructions": [
         "逐項比對 task-brief 與 feature YAML description 的需求——有遺漏或矛盾就 FAIL",
         "檢查 acceptance-criteria 是否每項都可自動化驗證，模糊描述就 FAIL",
-        "v3 feature 必須檢查是否涵蓋 docs/design/v2-parity.md 中的相關項目"
+        "檢查 feature spec 是否涵蓋相關 docs/design/ 文件中的要求"
       ]
     },
     "coder": {
       "model": "opus",
       "instructions": [
         "每次改動後跑 go build ./... && go vet ./... && go test -race ./...",
-        "v3 程式碼在 v3/ 子目錄，v2 在根目錄——不要混改",
+        "sub-module（zapfield、slogfield、ginmasker）在各自子目錄，各有獨立 go.mod",
         "遮罩邏輯變動必須同時更新對應的 _test.go"
       ]
     },
@@ -99,7 +99,7 @@
       "instructions": [
         "確認新增的 public function 有繁體中文 GoDoc",
         "檢查 error handling — Go 的 error 不能被忽略",
-        "v3 feature 比對 v2 遮罩結果是否一致"
+        "遮罩結果比對：同 input 必須同 output"
       ]
     },
     "deep-reviewer": {
