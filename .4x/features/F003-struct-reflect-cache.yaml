@@ -1,52 +1,51 @@
 id: F003-struct-reflect-cache
-name: "F003 Struct() reflect cache 效能優化"
-status: not-started
-priority: 1
-depends:
-  - F001-v3-core-interface
+name: F003 Struct() reflect cache 效能優化
 description: |
-  現有 Struct() 每次呼叫都重新 reflect 解析 type metadata（哪些 field 要 mask、用哪個 masker）。
-  對相同 struct type 重複呼叫（如 API response masking）浪費大量 CPU。
+    現有 Struct() 每次呼叫都重新 reflect 解析 type metadata（哪些 field 要 mask、用哪個 masker）。
+    對相同 struct type 重複呼叫（如 API response masking）浪費大量 CPU。
 
-  ## 目標
+    ## 目標
 
-  1. 引入 type metadata cache（`sync.Map`，key 為 `reflect.Type`）
-  2. 首次遇到新 type 時解析 tag 並快取 `[]fieldMask` metadata
-  3. 後續呼叫直接查 cache，只做值的遮罩運算
-  4. 新增 `Format(s any) string`：直接輸出遮罩後的字串表示，不 alloc 新 struct
-  5. Struct() 的外部行為不變（向後相容）
+    1. 引入 type metadata cache（`sync.Map`，key 為 `reflect.Type`）
+    2. 首次遇到新 type 時解析 tag 並快取 `[]fieldMask` metadata
+    3. 後續呼叫直接查 cache，只做值的遮罩運算
+    4. 新增 `Format(s any) string`：直接輸出遮罩後的字串表示，不 alloc 新 struct
+    5. Struct() 的外部行為不變（向後相容）
 
-  ## 效能目標
+    ## 效能目標
 
-  - 同 type 第二次以上呼叫 Struct()，CPU 開銷降低 ≥ 50%
-  - Format() 的 alloc 數量少於 Struct()（不建新 struct）
-  - benchmark 數據用 `go test -bench` 驗證
+    - 同 type 第二次以上呼叫 Struct()，CPU 開銷降低 ≥ 50%
+    - Format() 的 alloc 數量少於 Struct()（不建新 struct）
+    - benchmark 數據用 `go test -bench` 驗證
+status: in-progress
+priority: 1
 subtasks:
-  - id: type-cache
-    name: "typeInfo cache 實作"
-    status: not-started
-    description: "sync.Map cache + fieldMask metadata struct"
-  - id: struct-use-cache
-    name: "Struct() 改用 cache"
-    status: not-started
-    depends: [type-cache]
-    description: "Struct() 內部改為查 cache 取 metadata"
-  - id: format-func
-    name: "Format() 直出字串"
-    status: not-started
-    depends: [type-cache]
-    description: "不 alloc 新 struct，直接拼遮罩後字串"
-  - id: benchmark
-    name: "效能 benchmark"
-    status: not-started
-    depends: [struct-use-cache, format-func]
-    description: "BenchmarkStruct / BenchmarkFormat 驗證效能改善"
+    - id: type-cache
+      name: typeInfo cache 實作
+      status: not-started
+      description: sync.Map cache + fieldMask metadata struct
+    - id: struct-use-cache
+      name: Struct() 改用 cache
+      status: not-started
+      description: Struct() 內部改為查 cache 取 metadata
+      depends:
+        - type-cache
+    - id: format-func
+      name: Format() 直出字串
+      status: not-started
+      description: 不 alloc 新 struct，直接拼遮罩後字串
+      depends:
+        - type-cache
+    - id: benchmark
+      name: 效能 benchmark
+      status: not-started
+      description: BenchmarkStruct / BenchmarkFormat 驗證效能改善
+      depends:
+        - struct-use-cache
+        - format-func
 rules:
-  - "Struct() 外部行為必須與 v2 一致（回傳值、error 條件）"
-  - "cache 是 concurrency-safe（sync.Map）"
-  - "Format() 不得 panic，nil input 回空字串"
-acceptance:
-  - "所有現有 Struct() 測試通過"
-  - "BenchmarkStruct 重複呼叫同 type 的 ns/op 降低 ≥ 50%"
-  - "BenchmarkFormat allocs/op 少於 BenchmarkStruct"
-  - "concurrent 呼叫 Struct() 無 race（go test -race）"
+    - Struct() 外部行為必須與 v2 一致（回傳值、error 條件）
+    - cache 是 concurrency-safe（sync.Map）
+    - Format() 不得 panic，nil input 回空字串
+depends:
+    - F001-v3-core-interface
