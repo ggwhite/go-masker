@@ -38,7 +38,7 @@ description: |
     func WithQueryMask(keys ...string) Option
     func WithHeaderMask(keys ...string) Option
     ```
-status: in-progress
+status: ready-for-review
 priority: 4
 profile: full
 subtasks:
