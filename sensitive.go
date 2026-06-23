@@ -21,24 +21,47 @@ var (
 // 任何自動輸出路徑（fmt 列印、%#v、json.Marshal、encoding.TextMarshaler、slog）一律輸出遮罩值，
 // 原始值只有透過唯一出口 Reveal 才能取得。建構時就算好 masked 並快取，之後取值零額外成本。
 type Sensitive[T any] struct {
-	raw    T              // 唯一原值來源
-	masked string         // 建構時算好並快取的遮罩字串
-	mask   func(T) string // 綁定的遮罩函式，供 UnmarshalJSON 重算 masked 用
+	raw        T              // 唯一原值來源
+	masked     string         // 建構時算好並快取的遮罩字串
+	mask       func(T) string // 綁定的遮罩函式，供 UnmarshalJSON 重算 masked 用
+	redact     bool           // 完全替換模式：輸出 redactText 而非部分遮罩
+	redactText string         // redact 模式下的替換文字（預設 [REDACTED]）
 }
 
 // NewSensitive 建立綁定指定遮罩函式的 Sensitive[T]，是所有內建建構子的共同底層。
 // 建構時立即執行 maskFn(raw) 算出 masked 並快取，同時保存 maskFn 供 UnmarshalJSON 重算用。
 // maskFn 為 nil 時 masked 設為空字串（安全預設，絕不回傳原值）。
+// 傳入 WithRedact／WithRedactText 可啟用完全替換模式，redact 狀態建構時固定不可變。
 // Example:
 //
 //	s := masker.NewSensitive("0987654321", masker.Mobile)
 //	fmt.Println(s) // 0987***321
-func NewSensitive[T any](raw T, maskFn func(T) string) Sensitive[T] {
+func NewSensitive[T any](raw T, maskFn func(T) string, opts ...SensitiveOption) Sensitive[T] {
+	cfg := sensitiveConfig{redactText: DefaultRedactText}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 	masked := ""
 	if maskFn != nil {
 		masked = maskFn(raw)
 	}
-	return Sensitive[T]{raw: raw, masked: masked, mask: maskFn}
+	return Sensitive[T]{
+		raw:        raw,
+		masked:     masked,
+		mask:       maskFn,
+		redact:     cfg.redact,
+		redactText: cfg.redactText,
+	}
+}
+
+// display 回傳對外輸出的字串：redact 模式回傳替換文字，否則回傳部分遮罩值。
+// 所有自動輸出介面（String／GoString／MarshalJSON／MarshalText／LogValue）都經此決定，
+// 確保 redact 行為集中一處，且 UnmarshalJSON／Scan 重算 masked 後仍維持 redact 狀態。
+func (s Sensitive[T]) display() string {
+	if s.redact {
+		return s.redactText
+	}
+	return s.masked
 }
 
 // Reveal 回傳原始值，是取得原值的唯一途徑。呼叫它即代表刻意洩漏原值。
@@ -46,29 +69,29 @@ func (s Sensitive[T]) Reveal() T {
 	return s.raw
 }
 
-// String 實作 fmt.Stringer，回傳遮罩值（絕不碰原值）。
+// String 實作 fmt.Stringer，回傳遮罩值（絕不碰原值）；redact 模式回傳替換文字。
 func (s Sensitive[T]) String() string {
-	return s.masked
+	return s.display()
 }
 
-// GoString 實作 fmt.GoStringer，回傳遮罩值，防止 %#v 洩漏 struct 內部。
+// GoString 實作 fmt.GoStringer，回傳遮罩值，防止 %#v 洩漏 struct 內部；redact 模式回傳替換文字。
 func (s Sensitive[T]) GoString() string {
-	return s.masked
+	return s.display()
 }
 
-// MarshalJSON 實作 encoding/json.Marshaler，把遮罩值做 JSON 編碼後輸出。
+// MarshalJSON 實作 encoding/json.Marshaler，把遮罩值做 JSON 編碼後輸出；redact 模式輸出替換文字。
 func (s Sensitive[T]) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.masked)
+	return json.Marshal(s.display())
 }
 
-// MarshalText 實作 encoding.TextMarshaler，回傳遮罩值的 byte 切片。
+// MarshalText 實作 encoding.TextMarshaler，回傳遮罩值的 byte 切片；redact 模式回傳替換文字。
 func (s Sensitive[T]) MarshalText() ([]byte, error) {
-	return []byte(s.masked), nil
+	return []byte(s.display()), nil
 }
 
-// LogValue 實作 log/slog.LogValuer，讓結構化日誌輸出遮罩值。
+// LogValue 實作 log/slog.LogValuer，讓結構化日誌輸出遮罩值；redact 模式輸出替換文字。
 func (s Sensitive[T]) LogValue() slog.Value {
-	return slog.StringValue(s.masked)
+	return slog.StringValue(s.display())
 }
 
 // Equal 比較兩個 Sensitive[T] 的原始值是否相等，過程不暴露原值。

@@ -9,7 +9,7 @@ import (
 func TestBuiltinConstructorsParity(t *testing.T) {
 	cases := []struct {
 		name string
-		ctor func(string) Sensitive[string]
+		ctor func(string, ...SensitiveOption) Sensitive[string]
 		fn   func(string) string
 		in   string
 	}{
