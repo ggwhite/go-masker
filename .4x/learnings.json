@@ -7,8 +7,8 @@
       "category": "design",
       "content": "改 API 形狀但保留行為的 feature，task-brief 應明列「逐字一致」例外（如 URLMasker 的 stdlib xxxxx、NoneMasker 不適用 mask char），避免 coder 為統一介面而誤改遮罩邏輯。",
       "created_at": "2026-06-23T15:34:02.150756+08:00",
-      "last_used": "2026-06-23T17:05:35.164811+08:00",
-      "used_count": 4,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 5,
       "status": "active"
     },
     {
@@ -27,8 +27,8 @@
       "category": "testing",
       "content": "遷移類 feature 直接沿用上一版（v2）的既有測資作為輸出斷言，是驗證「行為不變」最省力且最可信的方式。",
       "created_at": "2026-06-23T15:34:02.150756+08:00",
-      "last_used": "2026-06-23T17:05:35.164811+08:00",
-      "used_count": 4,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 5,
       "status": "active"
     },
     {
@@ -127,8 +127,8 @@
       "category": "testing",
       "content": "效能型 AC 要明訂量測 fixture 與門檻計算方式（如 warm ≤ cold × 50%），避免不同 fixture 下指標互比產生 INFO 雜訊（如 Format allocs 在寬 metadata fixture 反而高於 Struct）。",
       "created_at": "2026-06-23T16:54:47.2709+08:00",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -137,8 +137,8 @@
       "category": "design",
       "content": "重構既有 reflect 路徑為 cache 時，task-brief 應逐條列出原分支語意（nil ptr/slice/map、未匯出欄位、無 tag 欄位），讓 reviewer 能一對一比對等價性，確保輸出不漂移。",
       "created_at": "2026-06-23T16:54:47.2709+08:00",
-      "last_used": "2026-06-23T17:05:35.164811+08:00",
-      "used_count": 1,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 2,
       "status": "active"
     },
     {
@@ -147,8 +147,8 @@
       "category": "code-quality",
       "content": "為 metadata 結構新增欄位（如 elemKind）時，只在實際被消費的 kind 分支填值，避免對 Ptr 等未使用分支計算冗餘欄位。",
       "created_at": "2026-06-23T16:54:47.2709+08:00",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -157,8 +157,8 @@
       "category": "code-quality",
       "content": "新增或修改 Go 測試檔後，coder 結束前必須跑 gofmt -l 確認零輸出，避免純格式問題佔用一整個 review round。",
       "created_at": "2026-06-23T17:23:08.103842+08:00",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -167,8 +167,8 @@
       "category": "testing",
       "content": "parity / 驗收型 feature 應在 coder-report 附上「來源測試函式 → 目標測試函式」對照表，讓 reviewer 能逐項核對覆蓋完整性而非靠抽查。",
       "created_at": "2026-06-23T17:23:08.103842+08:00",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -177,8 +177,8 @@
       "category": "design",
       "content": "API 形狀刻意不同但行為一致的 parity 例外（如 SetMasker→WithMaskChar），須在 task-brief 與 AC 預先明列，避免被誤判為功能缺漏。",
       "created_at": "2026-06-23T17:23:08.103842+08:00",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-06-23T18:06:55.171481+08:00",
+      "used_count": 1,
       "status": "active"
     }
   ]

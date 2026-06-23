@@ -1,10 +1,5 @@
 id: F007-v3-type-cache
-name: "F007 v3 Struct() type cache + Format()"
-status: not-started
-priority: 1
-depends:
-    - F001-v3-core-interface
-    - F006-v2-parity
+name: F007 v3 Struct() type cache + Format()
 description: |
     F003 的 type cache 和 Format() 被做到 v2 了，v3 的 Struct() 仍每次呼叫都重新 reflect 解析 tag。
     本 feature 把 v2 的 type_cache + Format() 移植到 v3。
@@ -36,6 +31,8 @@ description: |
     - v3 的 Masker interface 是 Mask(value) 不是 Marshal(maskChar, value)
     - v3 的 mask char 在 MaskerMarshaler 上，不在每次呼叫
     - v3 Format() 的 error fallback 要輸出 mask chars（不洩漏原值，同 code review fix）
+status: in-progress
+priority: 1
 subtasks:
     - id: type-cache
       name: v3 type_cache.go
@@ -44,26 +41,27 @@ subtasks:
     - id: struct-refactor
       name: v3 Struct() 改用 cache
       status: not-started
-      depends: [type-cache]
       description: v3/masker.go Struct() 從逐欄位 reflect 改為查 cachedTypeInfo
+      depends:
+        - type-cache
     - id: format
       name: v3 format.go
       status: not-started
-      depends: [type-cache]
       description: 移植 v2 format.go 到 v3/，適配 Mask() interface
+      depends:
+        - type-cache
     - id: benchmark
       name: 效能 benchmark
       status: not-started
-      depends: [struct-refactor, format]
       description: BenchmarkStruct warm ≤ cold × 50%，BenchmarkFormat allocs ≤ BenchmarkStruct
+      depends:
+        - struct-refactor
+        - format
 rules:
     - Struct() 外部行為必須與目前 v3 一致（回傳值、error 條件）
     - Format() error fallback 輸出 mask chars 不洩漏原值
     - cache 是 concurrency-safe（sync.Map）
     - v3 所有既有測試必須通過
-acceptance:
-    - cachedTypeInfo 正確快取 v3 的 field metadata
-    - Struct() 遮罩結果與改之前 byte-identical
-    - BenchmarkStruct warm ns/op ≤ cold × 50%
-    - Format() 輸出與 Struct() + fmt.Sprintf 一致
-    - go test -race ./... 通過
+depends:
+    - F001-v3-core-interface
+    - F006-v2-parity
