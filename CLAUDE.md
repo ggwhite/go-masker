@@ -83,6 +83,17 @@ release notes 格式：
 - 描述
 ```
 
+## 4x Feature 命名規則
+
+檔名、`id`、`name` 統一使用 `F00X-短名稱` 格式：
+
+- 檔名：`.4x/features/F001-v3-core-interface.yaml`
+- id：`F001-v3-core-interface`
+- name：`"F001 v3 core: 新 Masker interface + package-level 短函式"`
+- depends 引用完整 id：`F001-v3-core-interface`
+
+編號按依賴順序遞增，不跳號。新增 feature 接續最大編號。
+
 ## Key Types
 
 - `Masker` interface — implement to create a custom masker

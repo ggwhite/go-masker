@@ -24,7 +24,7 @@ description: |
 
   ## 設計參考
 
-  - docs/v3-design.md
+  - docs/design/v3-design.md
   - v1 的 package-level 函式設計（`git show v1.1.0:masker.go`）
 subtasks:
   - id: module-setup
