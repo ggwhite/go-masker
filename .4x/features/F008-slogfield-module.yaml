@@ -1,5 +1,5 @@
 id: F008-slogfield-module
-name: "F008 slogfield sub-module"
+name: F008 slogfield sub-module
 description: |
     zapfield 的 slog 版本，提供 slog.Attr helper 函式。
 
@@ -43,7 +43,7 @@ description: |
     func Masked(key string, maskerType masker.MaskerType, value string) slog.Attr
     func SensitiveAttr[T any](key string, s masker.Sensitive[T]) slog.Attr
     ```
-status: not-started
+status: in-progress
 priority: 1
 subtasks:
     - id: module-scaffold
@@ -73,4 +73,3 @@ rules:
     - 無外部依賴，只用 stdlib
     - API 命名與 zapfield 對齊
     - 所有 exported function 必須有 GoDoc
-depends: []
