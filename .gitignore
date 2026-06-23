@@ -22,9 +22,11 @@ Thumbs.db
 # 4x runtime (track settings + features, ignore everything else)
 .4x/*/
 .4x/*.bak
+.4x/*.json
+!.4x/settings.json
+.4x/*.log
 .4x/batch-*
 .4x/batch.*
-!.4x/settings.json
 !.4x/features/
 
 # Worktrees
