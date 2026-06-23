@@ -2,45 +2,46 @@ package masker
 
 import "strings"
 
-// NameMasker is a masker for names.
-// It masks the 2nd and 3rd characters, preserving the first and last.
-// Space-separated words (e.g. full names) are each masked independently.
-type NameMasker struct{}
+// NameMasker 是姓名的 masker，遮罩第 2、3 個字元並保留首尾。
+// 以空白分隔的字（例如全名）各自獨立遮罩。
+type NameMasker struct {
+	mask string
+}
 
-// Marshal masks a name by replacing the middle characters with the mask char.
+// Mask 遮罩姓名，將中間字元換成遮罩字元。
 //
-// Rules:
-//   - length 1: returns 2 mask chars
-//   - length 2–3: masks the 2nd character
-//   - length 4+: masks the 2nd and 3rd characters
-//   - spaces: each word is masked independently
+// 規則：
+//   - 長度 1：回傳 2 個遮罩字元
+//   - 長度 2–3：遮罩第 2 個字元
+//   - 長度 4 以上：遮罩第 2、3 個字元
+//   - 含空白：每個字各自獨立遮罩
 //
 // Example:
 //
-//	NameMasker{}.Marshal("*", "John")     // returns "J**n"
-//	NameMasker{}.Marshal("*", "John Doe") // returns "J**n D**e"
-func (m *NameMasker) Marshal(s string, i string) string {
-	l := len([]rune(i))
+//	(&NameMasker{mask: "*"}).Mask("John")     // returns "J**n"
+//	(&NameMasker{mask: "*"}).Mask("John Doe") // returns "J**n D**e"
+func (m *NameMasker) Mask(value string) string {
+	l := len([]rune(value))
 
 	if l == 0 {
 		return ""
 	}
 
-	if strs := strings.Split(i, " "); len(strs) > 1 {
+	if strs := strings.Split(value, " "); len(strs) > 1 {
 		tmp := make([]string, len(strs))
 		for idx, str := range strs {
-			tmp[idx] = m.Marshal(s, str)
+			tmp[idx] = m.Mask(str)
 		}
 		return strings.Join(tmp, " ")
 	}
 
 	if l == 2 || l == 3 {
-		return overlay(i, strLoop(s, 2), 1, 2)
+		return overlay(value, strLoop(m.mask, 2), 1, 2)
 	}
 
 	if l > 3 {
-		return overlay(i, strLoop(s, 2), 1, 3)
+		return overlay(value, strLoop(m.mask, 2), 1, 3)
 	}
 
-	return strLoop(s, 2)
+	return strLoop(m.mask, 2)
 }

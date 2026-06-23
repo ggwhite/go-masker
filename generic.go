@@ -6,24 +6,25 @@ import (
 	"strings"
 )
 
-// AllMasker is a masker that replaces every character with the mask char.
-type AllMasker struct{}
-
-// Marshal replaces every character in the value with the mask char.
-//
-// Example:
-//
-//	AllMasker{}.Marshal("*", "secret") // returns "******"
-func (m *AllMasker) Marshal(s, i string) string {
-	return strLoop(s, len([]rune(i)))
+// AllMasker 是把每個字元都換成遮罩字元的 masker。
+type AllMasker struct {
+	mask string
 }
 
-// parseGenericMask handles dynamic tag patterns that do not map to a registered Masker:
-//   - "first-N"  — mask the first N characters
-//   - "last-N"   — mask the last N characters
+// Mask 將值中的每個字元都換成遮罩字元。
+// Example:
 //
-// Returns (maskedValue, true, nil) on match, ("", false, nil) when the tag is not a dynamic pattern,
-// or ("", false, err) when the pattern is recognized but N is invalid.
+//	(&AllMasker{mask: "*"}).Mask("secret") // returns "******"
+func (m *AllMasker) Mask(value string) string {
+	return strLoop(m.mask, len([]rune(value)))
+}
+
+// parseGenericMask 處理不對應已註冊 Masker 的動態 tag 樣式：
+//   - "first-N"  — 遮罩前 N 個字元
+//   - "last-N"   — 遮罩後 N 個字元
+//
+// 命中時回傳 (遮罩值, true, nil)；非動態樣式回傳 ("", false, nil)；
+// 樣式被識別但 N 不合法（負數或非數字）時回傳 ("", false, err)。
 func parseGenericMask(maskChar, tag, value string) (string, bool, error) {
 	if strings.HasPrefix(tag, "first-") {
 		n, err := strconv.Atoi(strings.TrimPrefix(tag, "first-"))

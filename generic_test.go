@@ -21,6 +21,7 @@ func TestParseGenericMask(t *testing.T) {
 		{tag: "name", value: "hello", want: "", matched: false},
 		{tag: "first-abc", value: "hello", want: "", matched: false, wantErr: true},
 		{tag: "last-abc", value: "hello", want: "", matched: false, wantErr: true},
+		{tag: "first--1", value: "hello", want: "", matched: false, wantErr: true},
 	}
 
 	for _, tt := range tests {
@@ -46,7 +47,7 @@ func TestMarshal_GenericTags(t *testing.T) {
 		value string
 		want  string
 	}{
-		{MaskerTypeAll, "hello", "*****"},
+		{TypeAll, "hello", "*****"},
 		{"first-2", "hello", "**llo"},
 		{"last-2", "hello", "hel**"},
 	}
@@ -63,28 +64,9 @@ func TestMarshal_GenericTags(t *testing.T) {
 	}
 }
 
-func TestStruct_GenericTags(t *testing.T) {
-	type Secret struct {
-		SSN     string `mask:"all"`
-		Code    string `mask:"first-3"`
-		Suffix  string `mask:"last-4"`
-	}
-
+func TestMarshal_GenericTags_Error(t *testing.T) {
 	m := NewMaskerMarshaler()
-	in := &Secret{SSN: "123456789", Code: "ABCDEF", Suffix: "ABCDEF"}
-	out, err := m.Struct(in)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	s := out.(*Secret)
-	if s.SSN != "*********" {
-		t.Errorf("SSN got %v, want *********", s.SSN)
-	}
-	if s.Code != "***DEF" {
-		t.Errorf("Code got %v, want ***DEF", s.Code)
-	}
-	if s.Suffix != "AB****" {
-		t.Errorf("Suffix got %v, want AB****", s.Suffix)
+	if _, err := m.Marshal("first-abc", "hello"); err == nil {
+		t.Errorf("expected error for invalid first-N tag")
 	}
 }

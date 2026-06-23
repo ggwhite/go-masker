@@ -1,13 +1,12 @@
 package masker
 
-// NoneMasker is a masker that returns the value unchanged.
+// NoneMasker 是不做任何遮罩、原樣回傳值的 masker。
 type NoneMasker struct{}
 
-// Marshal returns the value unchanged.
-//
+// Mask 原樣回傳輸入值，不做任何遮罩。
 // Example:
 //
-//	NoneMasker{}.Marshal("*", "secret") // returns "secret"
-func (m *NoneMasker) Marshal(i string, value string) string {
+//	(&NoneMasker{}).Mask("secret") // returns "secret"
+func (m *NoneMasker) Mask(value string) string {
 	return value
 }

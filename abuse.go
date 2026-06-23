@@ -2,21 +2,22 @@ package masker
 
 import (
 	"strings"
+	"sync"
 	"unicode"
 )
 
-// TrieNode represents a node in the trie data structure
+// TrieNode 是 trie 資料結構中的節點。
 type TrieNode struct {
 	children map[rune]*TrieNode
 	isEnd    bool
 }
 
-// AbuseTrie represents a trie data structure for storing abuse words
+// AbuseTrie 是儲存髒話／敏感詞的 trie 資料結構。
 type AbuseTrie struct {
 	root *TrieNode
 }
 
-// NewAbuseTrie creates a new empty trie
+// NewAbuseTrie 建立一個空的 trie。
 func NewAbuseTrie() *AbuseTrie {
 	return &AbuseTrie{
 		root: &TrieNode{
@@ -25,7 +26,7 @@ func NewAbuseTrie() *AbuseTrie {
 	}
 }
 
-// Insert adds a word to the trie
+// Insert 將一個詞加入 trie，加入前會轉小寫並去除前後空白。
 func (t *AbuseTrie) Insert(word string) {
 	if word == "" {
 		return
@@ -45,14 +46,14 @@ func (t *AbuseTrie) Insert(word string) {
 	node.isEnd = true
 }
 
-// InsertAll adds multiple words to the trie
+// InsertAll 將多個詞一次加入 trie。
 func (t *AbuseTrie) InsertAll(words []string) {
 	for _, word := range words {
 		t.Insert(word)
 	}
 }
 
-// Contains checks if a word exists in the trie
+// Contains 檢查某個詞是否存在於 trie。
 func (t *AbuseTrie) Contains(word string) bool {
 	if word == "" {
 		return false
@@ -70,13 +71,12 @@ func (t *AbuseTrie) Contains(word string) bool {
 	return node.isEnd
 }
 
-// findAbuseWords finds all abuse words in the given text
+// findAbuseWords 找出文字中所有命中字典的詞。
 func (t *AbuseTrie) findAbuseWords(text string) []string {
 	var found []string
 	words := strings.Fields(text)
 
 	for _, word := range words {
-		// Clean the word (remove punctuation)
 		cleanWord := cleanWord(word)
 		if cleanWord != "" && t.Contains(cleanWord) {
 			found = append(found, word)
@@ -86,7 +86,7 @@ func (t *AbuseTrie) findAbuseWords(text string) []string {
 	return found
 }
 
-// cleanWord removes punctuation and converts to lowercase
+// cleanWord 去除標點並轉小寫，只保留字母與數字。
 func cleanWord(word string) string {
 	var result strings.Builder
 	for _, char := range word {
@@ -97,50 +97,61 @@ func cleanWord(word string) string {
 	return result.String()
 }
 
-// AbuseMasker is a masker for abuse words
+// AbuseMasker 是以字典命中後遮罩髒話／敏感詞的 masker。
+// 須先載入詞典（透過 AddWords / AddWord 或 NewAbuseMaskerWithWords）才會遮罩，空字典時原樣回傳。
+// 所有 exported 方法皆可安全並行使用。
 type AbuseMasker struct {
+	mu   sync.RWMutex
 	trie *AbuseTrie
+	mask string
 }
 
-// NewAbuseMasker creates a new abuse masker with an empty trie
-func NewAbuseMasker() *AbuseMasker {
+// NewAbuseMasker 建立一個空字典的 abuse masker，並指定遮罩字元。
+func NewAbuseMasker(maskChar string) *AbuseMasker {
 	return &AbuseMasker{
 		trie: NewAbuseTrie(),
+		mask: maskChar,
 	}
 }
 
-// NewAbuseMaskerWithWords creates a new abuse masker with predefined words
-func NewAbuseMaskerWithWords(words []string) *AbuseMasker {
+// NewAbuseMaskerWithWords 建立一個預先載入詞典的 abuse masker，並指定遮罩字元。
+func NewAbuseMaskerWithWords(maskChar string, words []string) *AbuseMasker {
 	trie := NewAbuseTrie()
 	trie.InsertAll(words)
 	return &AbuseMasker{
 		trie: trie,
+		mask: maskChar,
 	}
 }
 
-// AddWords adds abuse words to the masker
+// AddWords 將多個敏感詞加入 masker。
 func (m *AbuseMasker) AddWords(words []string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.trie.InsertAll(words)
 }
 
-// AddWord adds a single abuse word to the masker
+// AddWord 將單一敏感詞加入 masker。
 func (m *AbuseMasker) AddWord(word string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.trie.Insert(word)
 }
 
-// Marshal masks abuse words in the given text
-// It replaces abuse words with the specified mask character.
-// Only whole tokens (delimited by whitespace) are replaced; substrings inside
-// longer words are never masked.
-//
+// Mask 遮罩文字中命中字典的敏感詞。
+// 只有以空白分隔的完整 token 會被遮罩，較長字內的子字串不會被遮罩。
+// 空字典時原樣回傳。
 // Example:
 //
-//	abuseMasker := NewAbuseMaskerWithWords([]string{"bad", "terrible"})
-//	abuseMasker.Marshal("*", "This is a bad word and terrible") // returns "This is a *** word and ********"
-func (m *AbuseMasker) Marshal(maskChar string, text string) string {
+//	m := NewAbuseMaskerWithWords("*", []string{"bad", "terrible"})
+//	m.Mask("This is a bad word and terrible") // returns "This is a *** word and ********"
+func (m *AbuseMasker) Mask(text string) string {
 	if text == "" {
 		return text
 	}
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
 	runes := []rune(text)
 	var result strings.Builder
@@ -162,7 +173,7 @@ func (m *AbuseMasker) Marshal(maskChar string, text string) string {
 		word := string(runes[i:j])
 		cleaned := cleanWord(word)
 		if cleaned != "" && m.trie.Contains(cleaned) {
-			result.WriteString(strLoop(maskChar, j-i))
+			result.WriteString(strLoop(m.mask, j-i))
 		} else {
 			result.WriteString(word)
 		}
@@ -172,13 +183,17 @@ func (m *AbuseMasker) Marshal(maskChar string, text string) string {
 	return result.String()
 }
 
-// ContainsAbuse checks if the text contains any abuse words
+// ContainsAbuse 檢查文字是否含有任何命中字典的敏感詞。
 func (m *AbuseMasker) ContainsAbuse(text string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	abuseWords := m.trie.findAbuseWords(text)
 	return len(abuseWords) > 0
 }
 
-// GetAbuseWords returns all abuse words found in the text
+// GetAbuseWords 回傳文字中所有命中字典的敏感詞。
 func (m *AbuseMasker) GetAbuseWords(text string) []string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	return m.trie.findAbuseWords(text)
 }

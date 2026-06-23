@@ -1,6 +1,6 @@
 module github.com/ggwhite/go-masker/v3/zapfield
 
-go 1.21
+go 1.22
 
 require (
 	github.com/ggwhite/go-masker/v3 v3.0.0

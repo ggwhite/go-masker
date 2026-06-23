@@ -83,7 +83,7 @@ func (m *MaskerMarshaler) writeStructMasked(b *strings.Builder, sv reflect.Value
 			if v, err := m.Marshal(f.tag, fv.String()); err == nil {
 				b.WriteString(v)
 			} else {
-				b.WriteString(strLoop("*", len([]rune(fv.String()))))
+				b.WriteString(strLoop(m.maskChar, len([]rune(fv.String()))))
 			}
 			continue
 		}
@@ -98,7 +98,7 @@ func (m *MaskerMarshaler) writeMaskedField(b *strings.Builder, fv reflect.Value,
 	default:
 		writeVerbatim(b, fv)
 	case reflect.Struct:
-		if f.tag == MaskerTypeStruct {
+		if f.tag == TypeStruct {
 			m.writeStructMasked(b, fv)
 		} else {
 			writeVerbatim(b, fv)
@@ -109,7 +109,7 @@ func (m *MaskerMarshaler) writeMaskedField(b *strings.Builder, fv reflect.Value,
 			return
 		}
 		b.WriteByte('&')
-		if f.tag == MaskerTypeStruct {
+		if f.tag == TypeStruct {
 			m.writeStructMasked(b, fv.Elem())
 		} else {
 			writeVerbatim(b, fv.Elem())
@@ -119,7 +119,7 @@ func (m *MaskerMarshaler) writeMaskedField(b *strings.Builder, fv reflect.Value,
 			b.WriteString("map[]")
 			return
 		}
-		if f.tag != MaskerTypeMapStruct {
+		if f.tag != TypeMapStruct {
 			writeVerbatim(b, fv)
 			return
 		}
@@ -135,7 +135,7 @@ func (m *MaskerMarshaler) writeMaskedField(b *strings.Builder, fv reflect.Value,
 			b.WriteString("<nil>")
 			return
 		}
-		if f.tag != MaskerTypeStruct {
+		if f.tag != TypeStruct {
 			// Struct() 對非 struct tag 的 interface 欄位不複製（保持 zero），對應 <nil>。
 			b.WriteString("<nil>")
 			return
@@ -183,18 +183,18 @@ func (m *MaskerMarshaler) writeMaskedSlice(b *strings.Builder, fv reflect.Value,
 			}
 			v, err := m.Marshal(f.tag, fv.Index(i).String())
 			if err != nil {
-				v = strLoop("*", len([]rune(fv.Index(i).String())))
+				v = strLoop(m.maskChar, len([]rune(fv.Index(i).String())))
 			}
 			b.WriteString(v)
 		}
-	case f.elemKind == reflect.Struct && f.tag == MaskerTypeStruct:
+	case f.elemKind == reflect.Struct && f.tag == TypeStruct:
 		for i := 0; i < fv.Len(); i++ {
 			if i > 0 {
 				b.WriteByte(' ')
 			}
 			m.writeStructMasked(b, fv.Index(i))
 		}
-	case f.elemKind == reflect.Ptr && f.tag == MaskerTypeStruct:
+	case f.elemKind == reflect.Ptr && f.tag == TypeStruct:
 		for i := 0; i < fv.Len(); i++ {
 			if i > 0 {
 				b.WriteByte(' ')
@@ -207,7 +207,7 @@ func (m *MaskerMarshaler) writeMaskedSlice(b *strings.Builder, fv reflect.Value,
 			b.WriteByte('&')
 			m.writeStructMasked(b, el.Elem())
 		}
-	case f.elemKind == reflect.Interface && f.tag == MaskerTypeStruct:
+	case f.elemKind == reflect.Interface && f.tag == TypeStruct:
 		for i := 0; i < fv.Len(); i++ {
 			if i > 0 {
 				b.WriteByte(' ')

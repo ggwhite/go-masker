@@ -1,18 +1,18 @@
 package masker
 
-// IDMasker is a masker for ID numbers (e.g. national ID, passport).
-// It masks characters at positions 7–10 (1-indexed).
-type IDMasker struct{}
+// IDMasker 是身分證、護照等證號的 masker，遮罩第 7–10 位（1-indexed）。
+type IDMasker struct {
+	mask string
+}
 
-// Marshal masks an ID number by replacing characters at positions 7–10 with the mask char.
-//
+// Mask 遮罩證號，將第 7–10 位字元換成遮罩字元。
 // Example:
 //
-//	IDMasker{}.Marshal("*", "A123456789") // returns "A12345****"
-func (m *IDMasker) Marshal(s string, i string) string {
-	l := len([]rune(i))
+//	(&IDMasker{mask: "*"}).Mask("A123456789") // returns "A12345****"
+func (m *IDMasker) Mask(value string) string {
+	l := len([]rune(value))
 	if l == 0 {
 		return ""
 	}
-	return overlay(i, strLoop(s, 4), 6, 10)
+	return overlay(value, strLoop(m.mask, 4), 6, 10)
 }

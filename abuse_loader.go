@@ -7,17 +7,15 @@ import (
 	"strings"
 )
 
-// AbuseWordLoader provides methods to load abuse words from different sources
+// AbuseWordLoader 提供從不同來源載入敏感詞清單的方法。
 type AbuseWordLoader struct{}
 
-// NewAbuseWordLoader creates a new abuse word loader
+// NewAbuseWordLoader 建立一個新的敏感詞載入器。
 func NewAbuseWordLoader() *AbuseWordLoader {
 	return &AbuseWordLoader{}
 }
 
-// LoadFromFile loads abuse words from a local file
-// Each word should be on a separate line
-// Empty lines and lines starting with # are ignored (comments)
+// LoadFromFile 從本機檔案載入敏感詞，每行一個詞，空行與 # 開頭的註解行會被略過。
 func (l *AbuseWordLoader) LoadFromFile(filename string) ([]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -28,23 +26,18 @@ func (l *AbuseWordLoader) LoadFromFile(filename string) ([]string, error) {
 	return l.loadFromReader(file)
 }
 
-// LoadFromReader loads abuse words from an io.Reader
-// Each word should be on a separate line
-// Empty lines and lines starting with # are ignored (comments)
+// LoadFromReader 從 io.Reader 載入敏感詞，每行一個詞，空行與 # 開頭的註解行會被略過。
 func (l *AbuseWordLoader) LoadFromReader(reader io.Reader) ([]string, error) {
 	return l.loadFromReader(reader)
 }
 
-// LoadFromString loads abuse words from a string
-// Each word should be on a separate line
-// Empty lines and lines starting with # are ignored (comments)
+// LoadFromString 從字串載入敏感詞，每行一個詞，空行與 # 開頭的註解行會被略過。
 func (l *AbuseWordLoader) LoadFromString(content string) ([]string, error) {
 	reader := strings.NewReader(content)
 	return l.loadFromReader(reader)
 }
 
-// LoadFromSlice loads abuse words from a string slice
-// This is useful when you already have words in memory
+// LoadFromSlice 從字串 slice 載入敏感詞，會去除前後空白並略過空字串，適用於詞清單已在記憶體中的情況。
 func (l *AbuseWordLoader) LoadFromSlice(words []string) []string {
 	var result []string
 	for _, word := range words {
@@ -56,7 +49,7 @@ func (l *AbuseWordLoader) LoadFromSlice(words []string) []string {
 	return result
 }
 
-// loadFromReader is the internal method that processes the reader
+// loadFromReader 是處理 reader 的內部方法。
 func (l *AbuseWordLoader) loadFromReader(reader io.Reader) ([]string, error) {
 	var words []string
 	scanner := bufio.NewScanner(reader)
@@ -64,7 +57,6 @@ func (l *AbuseWordLoader) loadFromReader(reader io.Reader) ([]string, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
-		// Skip empty lines and comments
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}

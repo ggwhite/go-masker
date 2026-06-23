@@ -2,30 +2,31 @@ package masker
 
 import "strings"
 
-// TelephoneMasker is a masker for telephone
-type TelephoneMasker struct{}
+// TelephoneMasker 是市話的 masker。
+type TelephoneMasker struct {
+	mask string
+}
 
-// Marshal masks telephone
-// It remove "(", ")", " ", "-" chart, and mask last 4 digits of telephone number, format to "(??)????-????"
+// Mask 遮罩市話，移除 "("、")"、" "、"-" 後遮罩最後 4 碼，格式化為 "(XX)XXXX-****"。
 // Example:
 //
-//	TelephoneMasker{}.Marshal("*", "0227993078") // returns "(02)2799-****"
-func (m *TelephoneMasker) Marshal(s string, i string) string {
-	l := len([]rune(i))
+//	(&TelephoneMasker{mask: "*"}).Mask("0227993078") // returns "(02)2799-****"
+func (m *TelephoneMasker) Mask(value string) string {
+	l := len([]rune(value))
 	if l == 0 {
 		return ""
 	}
 
-	i = strings.ReplaceAll(i, " ", "")
-	i = strings.ReplaceAll(i, "(", "")
-	i = strings.ReplaceAll(i, ")", "")
-	i = strings.ReplaceAll(i, "-", "")
+	value = strings.ReplaceAll(value, " ", "")
+	value = strings.ReplaceAll(value, "(", "")
+	value = strings.ReplaceAll(value, ")", "")
+	value = strings.ReplaceAll(value, "-", "")
 
-	r := []rune(i)
+	r := []rune(value)
 	l = len(r)
 
 	if l != 10 && l != 8 {
-		return i
+		return value
 	}
 
 	ans := ""
@@ -39,7 +40,7 @@ func (m *TelephoneMasker) Marshal(s string, i string) string {
 
 	ans += string(r[:4])
 	ans += "-"
-	ans += strLoop(s, 4)
+	ans += strLoop(m.mask, 4)
 
 	return ans
 }

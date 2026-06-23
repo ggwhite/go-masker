@@ -1,18 +1,18 @@
 package masker
 
-// CreditMasker is a masker for credit card numbers.
-// It masks characters at positions 7–12 (1-indexed), preserving the first 6 and last 4 digits.
-type CreditMasker struct{}
+// CreditMasker 是信用卡號的 masker，遮罩第 7–12 位（1-indexed），保留前 6 後 4 碼。
+type CreditMasker struct {
+	mask string
+}
 
-// Marshal masks a credit card number by replacing the middle 6 digits with the mask char.
-//
+// Mask 遮罩信用卡號，將中間 6 碼換成遮罩字元。
 // Example:
 //
-//	CreditMasker{}.Marshal("*", "4111111111111111") // returns "411111******1111"
-func (m *CreditMasker) Marshal(s string, i string) string {
-	l := len([]rune(i))
+//	(&CreditMasker{mask: "*"}).Mask("4111111111111111") // returns "411111******1111"
+func (m *CreditMasker) Mask(value string) string {
+	l := len([]rune(value))
 	if l == 0 {
 		return ""
 	}
-	return overlay(i, strLoop(s, 6), 6, 12)
+	return overlay(value, strLoop(m.mask, 6), 6, 12)
 }

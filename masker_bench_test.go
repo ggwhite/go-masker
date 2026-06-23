@@ -123,15 +123,61 @@ func BenchmarkStructCold(b *testing.B) {
 	}
 }
 
-// BenchmarkFormat 量測對同一 type 反覆呼叫 Format() 直出遮罩字串的開銷。
+// benchFmtSeg 為 Format 比較 fixture 的巢狀 struct 葉節點，欄位皆為需遮罩的 PII。
+type benchFmtSeg struct {
+	Name  string `mask:"name"`
+	Email string `mask:"email"`
+	ID    string `mask:"id"`
+}
+
+// benchFmtPlayer 為 Format vs Struct 比較專用 fixture：PII／巢狀 struct 為主、幾乎不含 raw scalar 欄位。
+// 在此 fixture 上 Format()「不建新 masked struct」的 alloc 優勢明確，避免寬 scalar fixture 下
+// Format 對大量無 tag scalar 走 strconv 反而 alloc 較多造成的量測雜訊（見 task-brief L013）。
+type benchFmtPlayer struct {
+	Username string      `mask:"name"`
+	PlayerID string      `mask:"id"`
+	Email    string      `mask:"email"`
+	Profile  benchFmtSeg `mask:"struct"`
+	Contact  benchFmtSeg `mask:"struct"`
+	Backup   benchFmtSeg `mask:"struct"`
+}
+
+func benchFmtFixture() benchFmtPlayer {
+	seg := benchFmtSeg{Name: "Jane Doe", Email: "jane@gmail.com", ID: "B223456789"}
+	return benchFmtPlayer{
+		Username: "John Doe",
+		PlayerID: "A123456789",
+		Email:    "john@gmail.com",
+		Profile:  seg,
+		Contact:  seg,
+		Backup:   seg,
+	}
+}
+
+// BenchmarkFormat 量測對 PII／巢狀為主的 fixture 反覆呼叫 Format() 直出遮罩字串的開銷。
 func BenchmarkFormat(b *testing.B) {
 	m := NewMaskerMarshaler()
-	in := benchFixture()
+	in := benchFmtFixture()
 	resetTypeCache()
 	_ = m.Format(in) // warm cache
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = m.Format(in)
+	}
+}
+
+// BenchmarkStructForFormat 以與 BenchmarkFormat 相同的 fixture 量測 Struct()，供 Format vs Struct 的 alloc 比較。
+func BenchmarkStructForFormat(b *testing.B) {
+	m := NewMaskerMarshaler()
+	in := benchFmtFixture()
+	resetTypeCache()
+	if _, err := m.Struct(in); err != nil { // warm cache
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = m.Struct(in)
 	}
 }

@@ -117,9 +117,9 @@ func TestFormatMaskedContainers(t *testing.T) {
 		ID string `mask:"id"`
 	}
 	in := struct {
-		IDs   []string      `mask:"id"`
-		Items map[int]item  `mask:"mapstruct"`
-		Ptrs  []*item       `mask:"struct"`
+		IDs   []string     `mask:"id"`
+		Items map[int]item `mask:"mapstruct"`
+		Ptrs  []*item      `mask:"struct"`
 	}{
 		IDs:   []string{"A123456789", "B223456789"},
 		Items: map[int]item{1: {ID: "C323456789"}},
@@ -140,6 +140,79 @@ func TestFormatMaskedContainers(t *testing.T) {
 	}
 	if !strings.Contains(out, "<nil>") {
 		t.Errorf("Format output %q missing <nil> for nil slice pointer element", out)
+	}
+}
+
+// gtItem 是 ground-truth 測試用的巢狀 struct。
+type gtItem struct {
+	ID string `mask:"id"`
+}
+
+// gtFull 涵蓋 Format() 各條輸出分支，供逐字 ground-truth 斷言使用。
+type gtFull struct {
+	Name      string            `mask:"name"` // string 遮罩
+	Note      string            // 無 tag → 原值
+	hidden    string            `mask:"name"`         // 未匯出 → zero value
+	Unknown   string            `mask:"nosuchmasker"` // 未知 tag → error fallback mask char
+	Val       gtItem            `mask:"struct"`       // 巢狀 struct value
+	Ptr       *gtItem           `mask:"struct"`       // 巢狀 struct ptr
+	NilPtr    *gtItem           `mask:"struct"`       // nil pointer → <nil>
+	IDs       []string          `mask:"id"`           // []string 遮罩
+	NilSlice  []string          `mask:"id"`           // nil slice → []
+	Structs   []gtItem          `mask:"struct"`       // []struct
+	PtrSlice  []*gtItem         `mask:"struct"`       // []*struct（含 nil 元素）
+	Ifaces    []interface{}     `mask:"struct"`       // []interface{}
+	MapStruct map[string]gtItem `mask:"mapstruct"`    // map mapstruct
+	NilMap    map[string]gtItem `mask:"mapstruct"`    // nil map → map[]
+}
+
+// TestFormatGroundTruth 驗證 AC-7：Format() 各輸出分支與 ground-truth 字串逐字一致。
+func TestFormatGroundTruth(t *testing.T) {
+	m := NewMaskerMarshaler()
+	in := gtFull{
+		Name:    "John Doe",
+		Note:    "plain note",
+		hidden:  "should be zeroed",
+		Unknown: "leakme",
+		Val:     gtItem{ID: "A123456789"},
+		Ptr:     &gtItem{ID: "B223456789"},
+		NilPtr:  nil,
+		IDs:     []string{"C323456789", "D423456789"},
+		Structs: []gtItem{{ID: "E523456789"}},
+		PtrSlice: []*gtItem{
+			{ID: "F623456789"},
+			nil,
+		},
+		Ifaces:    []interface{}{gtItem{ID: "G723456789"}, &gtItem{ID: "H823456789"}},
+		MapStruct: map[string]gtItem{"k1": {ID: "I923456789"}},
+	}
+
+	const want = "{J**n D**e plain note  ****** {A12345****} &{B22345****} <nil> [C32345**** D42345****] [] [{E52345****}] [&{F62345****} <nil>] [{G72345****} &{H82345****}] map[k1:{I92345****}] map[]}"
+
+	got := m.Format(in)
+	if got != want {
+		t.Errorf("Format ground-truth mismatch:\n got: %q\nwant: %q", got, want)
+	}
+	// 未知 tag 的 error fallback 不得洩漏原值
+	if strings.Contains(got, "leakme") {
+		t.Errorf("Format leaked raw value via error fallback: %q", got)
+	}
+}
+
+// TestFormatErrorFallbackMaskChar 驗證 parity 例外 #2：error fallback 使用 marshaler 的自訂遮罩字元，且絕不輸出原值。
+func TestFormatErrorFallbackMaskChar(t *testing.T) {
+	m := NewMaskerMarshaler(WithMaskChar('#'))
+	in := struct {
+		Unknown string `mask:"nosuchmasker"`
+	}{Unknown: "leakme"}
+
+	got := m.Format(in)
+	const want = "{######}"
+	if got != want {
+		t.Errorf("Format with custom mask char = %q, want %q", got, want)
+	}
+	if strings.Contains(got, "leakme") {
+		t.Errorf("Format leaked raw value: %q", got)
 	}
 }
 

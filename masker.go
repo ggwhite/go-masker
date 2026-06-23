@@ -9,189 +9,137 @@ import (
 
 const tagName = "mask"
 
-// MaskerType is a string type for masker type
+// MaskerType 是遮罩型別的字串別名，對應 struct tag `mask:"..."` 的值。
 type MaskerType string
 
-// MaskerType constants
+// MaskerType 常數。v3 採用精簡命名（保留 Type prefix 以避免與其他識別字衝突）。
 const (
-	MaskerTypeNone      MaskerType = "none"
-	MaskerTypePassword  MaskerType = "password"
-	MaskerTypeName      MaskerType = "name"
-	MaskerTypeAddress   MaskerType = "addr"
-	MaskerTypeEmail     MaskerType = "email"
-	MaskerTypeMobile    MaskerType = "mobile"
-	MaskerTypeTel       MaskerType = "tel"
-	MaskerTypeID        MaskerType = "id"
-	MaskerTypeCredit    MaskerType = "credit"
-	MaskerTypeURL       MaskerType = "url"
-	MaskerTypeAbuse     MaskerType = "abuse"
-	MaskerTypeStruct    MaskerType = "struct"
-	MaskerTypeAll       MaskerType = "all"
-	MaskerTypeMapStruct MaskerType = "mapstruct"
+	TypeNone      MaskerType = "none"
+	TypePassword  MaskerType = "password"
+	TypeName      MaskerType = "name"
+	TypeAddress   MaskerType = "addr"
+	TypeEmail     MaskerType = "email"
+	TypeMobile    MaskerType = "mobile"
+	TypeTel       MaskerType = "tel"
+	TypeID        MaskerType = "id"
+	TypeCredit    MaskerType = "credit"
+	TypeURL       MaskerType = "url"
+	TypeAbuse     MaskerType = "abuse"
+	TypeStruct    MaskerType = "struct"
+	TypeAll       MaskerType = "all"
+	TypeMapStruct MaskerType = "mapstruct"
 )
 
-// Masker is an interface for masking sensitive data
+// Masker 是遮罩單一字串的介面。
+// 遮罩字元已於建構時注入各實作，呼叫者只需提供待遮罩的值。
+// 實作自訂 masker 時，實作此介面並透過 MaskerMarshaler.Register 註冊即可。
 type Masker interface {
-	Marshal(string, string) string
+	Mask(value string) string
 }
 
-// MaskerMarshaler is a masker marshaler.
-// All exported methods are safe for concurrent use.
-// Direct access to the Maskers field is NOT concurrency-safe; use Register/Get instead.
+// Option 是 MaskerMarshaler 的建構選項，遵循 functional options 模式。
+type Option func(*MaskerMarshaler)
+
+// WithMaskChar 設定此 marshaler 使用的遮罩字元，預設為 '*'。
+// 設定後僅影響由此 marshaler 建立的 masker 實例，不會污染 DefaultMaskerMarshaler。
+// 注意：URLMasker（密碼段固定輸出 xxxxx）與 NoneMasker（原樣回傳）不受此設定影響。
+func WithMaskChar(c rune) Option {
+	return func(m *MaskerMarshaler) {
+		m.maskChar = string(c)
+	}
+}
+
+// MaskerMarshaler 管理一組 masker 並提供 Marshal 與 Struct 等遮罩操作。
+// 所有 exported 方法皆可安全並行使用。
 type MaskerMarshaler struct {
-	mu      sync.RWMutex
-	Maskers map[MaskerType]Masker
-	masker  string // default masker
+	mu       sync.RWMutex
+	maskers  map[MaskerType]Masker
+	maskChar string
 }
 
-// Marshal returns a masked value by masker type
-// It is used for masking sensitive data
+// Marshal 依 masker 型別回傳遮罩後的值，找不到型別時回傳 error。
+// 同時支援動態 tag first-N / last-N，這類 tag 不需事先註冊。
 // Example:
 //
 //	m := masker.NewMaskerMarshaler()
-//	log.Println(m.Marshal(masker.MaskerTypeNone, "none"))                               // none <nil>
-//	log.Println(m.Marshal(masker.MaskerTypePassword, "password"))                       // ************** <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeName, "name"))                               // n**e <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeAddress, "address"))                         // addres****** <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeEmail, "email"))                             // ema**** <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeMobile, "mobile"))                           // mobi*** <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeTel, "tel"))                                 // tel <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeID, "id"))                                   // id**** <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeCredit, "4111111111111111"))                 // 411111******1111 <nil>
-//	log.Println(m.Marshal(masker.MaskerTypeURL, "http://john:password@localhost:3000")) // http://john:xxxxx@localhost:3000 <nil>
+//	s, _ := m.Marshal(masker.TypeMobile, "0987654321") // 0987***321
 func (m *MaskerMarshaler) Marshal(t MaskerType, value string) (string, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	if result, matched, err := parseGenericMask(m.masker, string(t), value); matched {
+	if result, matched, err := parseGenericMask(m.maskChar, string(t), value); matched {
 		return result, err
 	}
-	masker, ok := m.Maskers[t]
+	masker, ok := m.maskers[t]
 	if !ok {
 		return "", fmt.Errorf("masker %v not found", t)
 	}
-	return masker.Marshal(m.masker, value), nil
+	return masker.Mask(value), nil
 }
 
-// Register adds a masker by masker type
-// It is used for adding or override a masker by masker type
+// MustMarshal 與 Marshal 相同，但找不到 masker 型別時直接 panic。
+// 適用於呼叫者確信型別存在、不想處理 error 的場景。
 // Example:
 //
 //	m := masker.NewMaskerMarshaler()
-//	m.Register(masker.MaskerTypePassword, &PasswordMasker{})
-//	log.Println(m.List()) // [password name addr email tel id url none mobile credit]
+//	s := m.MustMarshal(masker.TypeMobile, "0987654321") // 0987***321
+func (m *MaskerMarshaler) MustMarshal(t MaskerType, value string) string {
+	result, err := m.Marshal(t, value)
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
+// Register 以 masker 型別新增或覆寫一個 masker。
 func (m *MaskerMarshaler) Register(t MaskerType, masker Masker) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.Maskers[t] = masker
+	m.maskers[t] = masker
 }
 
-// Unregister removes a masker by masker type
-// It is used for removing a masker by masker type
-// Example:
-//
-//	m := masker.NewMaskerMarshaler()
-//	m.Unregister(masker.MaskerTypePassword)
-//	log.Println(m.List()) // [name addr email tel id url none mobile credit]
+// Unregister 移除指定型別的 masker。
 func (m *MaskerMarshaler) Unregister(t MaskerType) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	delete(m.Maskers, t)
+	delete(m.maskers, t)
 }
 
-// Get returns a masker by masker type
-// It is used for getting a masker by masker type
-// Example:
-//
-//	m := masker.NewMaskerMarshaler()
-//	masker, _ := m.Get(masker.MaskerTypePassword)
-//	log.Println(masker) // &{PasswordMasker}
+// Get 回傳指定型別的 masker，找不到時回傳 error。
 func (m *MaskerMarshaler) Get(t MaskerType) (Masker, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	masker, ok := m.Maskers[t]
+	masker, ok := m.maskers[t]
 	if !ok {
 		return nil, fmt.Errorf("masker %v not found", t)
 	}
 	return masker, nil
 }
 
-// List returns a list of masker types
-// It is used for listing all masker types
-// Example:
-//
-//	m := masker.NewMaskerMarshaler()
-//	log.Println(m.List()) // [password name addr email tel id url none mobile credit]
+// List 回傳目前已註冊的所有 masker 型別。
 func (m *MaskerMarshaler) List() []MaskerType {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var list []MaskerType
-	for t := range m.Maskers {
+	for t := range m.maskers {
 		list = append(list, t)
 	}
 	return list
 }
 
-func (m *MaskerMarshaler) SetMasker(masker string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.masker = masker
-}
-
-// Struct must input a interface{}, add tag mask on struct fields, after Struct(), return a pointer interface{} of input type and it will be masked with the tag format type
+// Struct 接收 struct 或 struct 指標，依欄位上的 `mask` tag 遮罩後回傳同型別的指標。
+// 原輸入不會被修改。
 //
 // Limitation:
-//   - Cyclic object graphs are not specially handled. Self-referencing structures can
-//     recurse indefinitely when using `mask:"struct"` or `mask:"mapstruct"`.
-//   - Avoid cyclic references in masking paths.
+//   - 不特別處理循環物件圖；自我參照結構在 `mask:"struct"` 或 `mask:"mapstruct"` 下可能無限遞迴。
 //
 // Example:
 //
 //	type Foo struct {
-//		Name      string `mask:"name"`
-//		Email     string `mask:"email"`
-//		Password  string `mask:"password"`
-//		ID        string `mask:"id"`
-//		Address   string `mask:"addr"`
-//		Mobile    string `mask:"mobile"`
-//		Telephone string `mask:"tel"`
-//		Credit    string `mask:"credit"`
-//		URL       string `mask:"url"`
-//		Foo       *Foo   `mask:"struct"`
+//		Name  string `mask:"name"`
+//		Email string `mask:"email"`
 //	}
-//
-//	func main() {
-//		m := masker.NewMaskerMarshaler()
-//		log.Println(m.List()) // [password name addr email tel id url none mobile credit]
-//		foo1 := &Foo{
-//			Name:      "John Doe",
-//			Email:     "john@gmail.com",
-//			Password:  "password",
-//			ID:        "1234567890",
-//			Address:   "123 Main St",
-//			Mobile:    "1234567890",
-//			Telephone: "1234567890",
-//			Credit:    "4111111111111111",
-//			URL:       "http://john:password@localhost:3000",
-//			Foo: &Foo{
-//				Name:      "John Doe",
-//				Email:     "john@gmail.com",
-//				Password:  "password",
-//				ID:        "1234567890",
-//				Address:   "123 Main St",
-//				Mobile:    "1234567890",
-//				Telephone: "1234567890",
-//				Credit:    "4111111111111111",
-//				URL:       "http://john:password@localhost:3000",
-//			},
-//		}
-//
-//		foo2, _ := m.Struct(foo1)
-//
-//		log.Println(foo1) // &{John Doe john@gmail.com password 1234567890 123 Main St 1234567890 1234567890 4111111111111111 http://john:password@localhost:3000 0xc0000001e0}
-//		log.Println(foo1.Foo) // &{John Doe john@gmail.com password 1234567890 123 Main St 1234567890 1234567890 4111111111111111 http://john:password@localhost:3000 <nil>}
-//		log.Println(foo2) // &{J**n D**e joh****@gmail.com ************** 123456**** 123 Ma****** 1234***890 (12)3456-**** 411111******1111 http://john:xxxxx@localhost:3000 0xc000000320}
-//		log.Println(foo2.(*Foo).Foo) // &{J**n D**e joh****@gmail.com ************** 123456**** 123 Ma****** 1234***890 (12)3456-**** 411111******1111 http://john:xxxxx@localhost:3000 <nil>}
-//	}
+//	m := masker.NewMaskerMarshaler()
+//	out, _ := m.Struct(&Foo{Name: "John Doe", Email: "john@gmail.com"})
 func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 	if s == nil {
 		return nil, fmt.Errorf("input is nil")
@@ -221,144 +169,152 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 		selem = sv
 	}
 
-	info := cachedTypeInfo(selem.Type())
-	for _, f := range info.fields {
+	for _, f := range cachedTypeInfo(selem.Type()).fields {
 		if !f.exported {
 			continue
 		}
-		sf := selem.Field(f.index)
-		dst := tptr.Elem().Field(f.index)
 		if !f.hasTag {
-			dst.Set(sf)
+			tptr.Elem().Field(f.index).Set(selem.Field(f.index))
 			continue
 		}
 
 		switch f.kind {
 		default:
-			dst.Set(sf)
+			tptr.Elem().Field(f.index).Set(selem.Field(f.index))
 		case reflect.String:
-			v, err := m.Marshal(f.tag, sf.String())
+			v, err := m.Marshal(f.tag, selem.Field(f.index).String())
 			if err != nil {
 				return nil, err
 			}
-			dst.SetString(v)
+			tptr.Elem().Field(f.index).SetString(v)
 		case reflect.Struct:
-			if f.tag == MaskerTypeStruct {
-				_t, err := m.Struct(sf.Interface())
+			if f.tag == TypeStruct {
+				_t, err := m.Struct(selem.Field(f.index).Interface())
 				if err != nil {
 					return nil, err
 				}
-				dst.Set(reflect.ValueOf(_t).Elem())
+				tptr.Elem().Field(f.index).Set(reflect.ValueOf(_t).Elem())
 			} else {
-				dst.Set(sf)
+				tptr.Elem().Field(f.index).Set(selem.Field(f.index))
 			}
 		case reflect.Ptr:
-			if sf.IsNil() {
+			if selem.Field(f.index).IsNil() {
 				continue
 			}
-			if f.tag == MaskerTypeStruct {
-				_t, err := m.Struct(sf.Interface())
+			if f.tag == TypeStruct {
+				_t, err := m.Struct(selem.Field(f.index).Interface())
 				if err != nil {
 					return nil, err
 				}
-				dst.Set(reflect.ValueOf(_t))
+				tptr.Elem().Field(f.index).Set(reflect.ValueOf(_t))
 			} else {
-				dst.Set(sf)
+				tptr.Elem().Field(f.index).Set(selem.Field(f.index))
 			}
 		case reflect.Map:
-			if sf.IsNil() {
+			if selem.Field(f.index).IsNil() {
 				continue
 			}
-			if f.tag != MaskerTypeMapStruct {
-				dst.Set(sf)
+			if f.tag != TypeMapStruct {
+				tptr.Elem().Field(f.index).Set(selem.Field(f.index))
 				continue
 			}
 
-			maskedMap := reflect.MakeMapWithSize(sf.Type(), sf.Len())
-			iter := sf.MapRange()
+			maskedMap := reflect.MakeMapWithSize(selem.Field(f.index).Type(), selem.Field(f.index).Len())
+			iter := selem.Field(f.index).MapRange()
 			for iter.Next() {
-				maskedValue, err := m.maskMapStructValue(iter.Value())
+				v := iter.Value()
+				maskedValue, err := m.maskMapStructValue(v)
 				if err != nil {
 					return nil, err
 				}
 
 				maskedMap.SetMapIndex(iter.Key(), maskedValue)
 			}
-			dst.Set(maskedMap)
+			tptr.Elem().Field(f.index).Set(maskedMap)
 			continue
 
 		case reflect.Slice:
-			if sf.IsNil() {
+			if selem.Field(f.index).IsNil() {
 				continue
 			}
 			switch {
 			case f.elemKind == reflect.String:
-				orgval := sf.Interface().([]string)
+				orgval := selem.Field(f.index).Interface().([]string)
 				newval := make([]string, len(orgval))
-				for i, val := range orgval {
+				for j, val := range orgval {
 					v, err := m.Marshal(f.tag, val)
 					if err != nil {
 						return nil, err
 					}
-					newval[i] = v
+					newval[j] = v
 				}
-				dst.Set(reflect.ValueOf(newval))
-			case f.elemKind == reflect.Struct && f.tag == MaskerTypeStruct:
-				newval := reflect.MakeSlice(sf.Type(), 0, sf.Len())
-				for j, l := 0, sf.Len(); j < l; j++ {
-					_n, err := m.Struct(sf.Index(j).Interface())
+				tptr.Elem().Field(f.index).Set(reflect.ValueOf(newval))
+			case f.elemKind == reflect.Struct && f.tag == TypeStruct:
+				newval := reflect.MakeSlice(selem.Field(f.index).Type(), 0, selem.Field(f.index).Len())
+				for j, l := 0, selem.Field(f.index).Len(); j < l; j++ {
+					_n, err := m.Struct(selem.Field(f.index).Index(j).Interface())
 					if err != nil {
 						return nil, err
 					}
 					newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
 				}
-				dst.Set(newval)
-			case f.elemKind == reflect.Ptr && f.tag == MaskerTypeStruct:
-				newval := reflect.MakeSlice(sf.Type(), 0, sf.Len())
-				for j, l := 0, sf.Len(); j < l; j++ {
-					if sf.Index(j).IsNil() {
-						newval = reflect.Append(newval, sf.Index(j))
+				tptr.Elem().Field(f.index).Set(newval)
+			case f.elemKind == reflect.Ptr && f.tag == TypeStruct:
+				newval := reflect.MakeSlice(selem.Field(f.index).Type(), 0, selem.Field(f.index).Len())
+				for j, l := 0, selem.Field(f.index).Len(); j < l; j++ {
+					if selem.Field(f.index).Index(j).IsNil() {
+						newval = reflect.Append(newval, selem.Field(f.index).Index(j))
 						continue
 					}
-					_n, err := m.Struct(sf.Index(j).Interface())
+					_n, err := m.Struct(selem.Field(f.index).Index(j).Interface())
 					if err != nil {
 						return nil, err
 					}
 					newval = reflect.Append(newval, reflect.ValueOf(_n))
 				}
-				dst.Set(newval)
-			case f.elemKind == reflect.Interface && f.tag == MaskerTypeStruct:
-				newval := reflect.MakeSlice(sf.Type(), 0, sf.Len())
-				for j, l := 0, sf.Len(); j < l; j++ {
-					_n, err := m.Struct(sf.Index(j).Interface())
+				tptr.Elem().Field(f.index).Set(newval)
+			case f.elemKind == reflect.Interface && f.tag == TypeStruct:
+				newval := reflect.MakeSlice(selem.Field(f.index).Type(), 0, selem.Field(f.index).Len())
+				for j, l := 0, selem.Field(f.index).Len(); j < l; j++ {
+					_n, err := m.Struct(selem.Field(f.index).Index(j).Interface())
 					if err != nil {
 						return nil, err
 					}
-					if reflect.TypeOf(sf.Index(j).Interface()).Kind() != reflect.Ptr {
+					if reflect.TypeOf(selem.Field(f.index).Index(j).Interface()).Kind() != reflect.Ptr {
 						newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
 					} else {
 						newval = reflect.Append(newval, reflect.ValueOf(_n))
 					}
 				}
-				dst.Set(newval)
+				tptr.Elem().Field(f.index).Set(newval)
 			default:
-				dst.Set(sf)
+				tptr.Elem().Field(f.index).Set(selem.Field(f.index))
 			}
 		case reflect.Interface:
-			if sf.IsNil() {
+			if selem.Field(f.index).IsNil() {
 				continue
 			}
-			if f.tag != MaskerTypeStruct {
-				continue
-			}
-			_t, err := m.Struct(sf.Interface())
-			if err != nil {
-				return nil, err
-			}
-			if reflect.TypeOf(sf.Interface()).Kind() != reflect.Ptr {
-				dst.Set(reflect.ValueOf(_t).Elem())
+			if f.tag == TypeStruct {
+				_t, err := m.Struct(selem.Field(f.index).Interface())
+				if err != nil {
+					return nil, err
+				}
+				if reflect.TypeOf(selem.Field(f.index).Interface()).Kind() != reflect.Ptr {
+					tptr.Elem().Field(f.index).Set(reflect.ValueOf(_t).Elem())
+				} else {
+					tptr.Elem().Field(f.index).Set(reflect.ValueOf(_t))
+				}
 			} else {
-				dst.Set(reflect.ValueOf(_t))
+				concrete := reflect.ValueOf(selem.Field(f.index).Interface())
+				if concrete.Kind() == reflect.String {
+					v, err := m.Marshal(f.tag, concrete.String())
+					if err != nil {
+						return nil, err
+					}
+					tptr.Elem().Field(f.index).Set(reflect.ValueOf(v))
+				} else {
+					tptr.Elem().Field(f.index).Set(selem.Field(f.index))
+				}
 			}
 		}
 	}
@@ -366,9 +322,9 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 	return tptr.Interface(), nil
 }
 
-// maskMapStructValue recursively masks mapstruct values for struct, ptr, and slice shapes.
-// Unsupported scalar/container leaf values are returned as-is to preserve original data.
-// Note: cyclic object graphs are not handled and may cause a stack overflow.
+// maskMapStructValue 遞迴遮罩 mapstruct 的值，支援 struct、ptr、slice、map 形狀。
+// 不支援的純量／容器葉節點原樣回傳以保留原始資料。
+// 注意：不處理循環物件圖，可能造成 stack overflow。
 func (m *MaskerMarshaler) maskMapStructValue(v reflect.Value) (reflect.Value, error) {
 	switch v.Kind() {
 	case reflect.Map:
@@ -415,52 +371,44 @@ func (m *MaskerMarshaler) maskMapStructValue(v reflect.Value) (reflect.Value, er
 			maskedSlice = reflect.Append(maskedSlice, maskedElem)
 		}
 		return maskedSlice, nil
+	case reflect.Interface:
+		if v.IsNil() {
+			return v, nil
+		}
+		return m.maskMapStructValue(v.Elem())
 	default:
 		return v, nil
 	}
 }
 
-// NewMaskerMarshaler returns a new masker marshaler
-// It has default maskers and default masker
-// Default maskers are:
-//   - NoneMasker
-//   - PasswordMasker
-//   - NameMasker
-//   - AddressMasker
-//   - EmailMasker
-//   - MobileMasker
-//   - TelephoneMasker
-//   - IDMasker
-//   - CreditMasker
-//   - URLMasker
-//   - AbuseMasker
-//   - AllMasker
-//
-// Dynamic tags "first-N" and "last-N" are also supported without registration.
-// Default masker is "*"
-// It is used for masking sensitive data
-func NewMaskerMarshaler() *MaskerMarshaler {
-	return &MaskerMarshaler{
-		Maskers: map[MaskerType]Masker{
-			MaskerTypeNone:     &NoneMasker{},
-			MaskerTypePassword: &PasswordMasker{},
-			MaskerTypeName:     &NameMasker{},
-			MaskerTypeAddress:  &AddressMasker{},
-			MaskerTypeEmail:    &EmailMasker{},
-			MaskerTypeMobile:   &MobileMasker{},
-			MaskerTypeTel:      &TelephoneMasker{},
-			MaskerTypeID:       &IDMasker{},
-			MaskerTypeCredit:   &CreditMasker{},
-			MaskerTypeURL:      &URLMasker{},
-			MaskerTypeAbuse:    NewAbuseMasker(),
-			MaskerTypeAll:      &AllMasker{},
-		},
-		masker: "*",
+// NewMaskerMarshaler 建立一個新的 MaskerMarshaler，並註冊全部預設 masker。
+// 預設遮罩字元為 '*'，可透過 WithMaskChar 選項變更。
+// 每次呼叫都會建立各自獨立的一組 masker 實例，因此設定 WithMaskChar 不會影響其他 marshaler。
+// 動態 tag first-N / last-N 不需註冊即可使用。
+func NewMaskerMarshaler(opts ...Option) *MaskerMarshaler {
+	m := &MaskerMarshaler{maskChar: "*"}
+	for _, opt := range opts {
+		opt(m)
 	}
+	c := m.maskChar
+	m.maskers = map[MaskerType]Masker{
+		TypeNone:     &NoneMasker{},
+		TypePassword: &PasswordMasker{mask: c},
+		TypeName:     &NameMasker{mask: c},
+		TypeAddress:  &AddressMasker{mask: c},
+		TypeEmail:    &EmailMasker{mask: c},
+		TypeMobile:   &MobileMasker{mask: c},
+		TypeTel:      &TelephoneMasker{mask: c},
+		TypeID:       &IDMasker{mask: c},
+		TypeCredit:   &CreditMasker{mask: c},
+		TypeURL:      &URLMasker{},
+		TypeAbuse:    NewAbuseMasker(c),
+		TypeAll:      &AllMasker{mask: c},
+	}
+	return m
 }
 
-// DefaultMaskerMarshaler is a default masker marshaler.
-// It has the same default maskers as NewMaskerMarshaler().
+// DefaultMaskerMarshaler 是預設的 MaskerMarshaler，遮罩字元為 '*'，供 package-level 便利函式使用。
 var DefaultMaskerMarshaler = NewMaskerMarshaler()
 
 func strLoop(str string, length int) string {

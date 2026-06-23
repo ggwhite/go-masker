@@ -1,14 +1,14 @@
 package masker
 
-// PasswordMasker is a masker for password
-type PasswordMasker struct{}
+// PasswordMasker 是密碼的 masker。
+type PasswordMasker struct {
+	mask string
+}
 
-// Marshal masks password
-// It returns 14 asterisks
+// Mask 遮罩密碼，固定回傳 14 個遮罩字元，與原密碼長度無關。
 // Example:
 //
-//	PasswordMasker{}.Marshal("*", "password") // returns "**************"
-//	PasswordMasker{}.Marshal("&", "password") // returns "&&&&&&&&&&&&&&"
-func (m *PasswordMasker) Marshal(s string, i string) string {
-	return strLoop(s, 14)
+//	(&PasswordMasker{mask: "*"}).Mask("password") // returns "**************"
+func (m *PasswordMasker) Mask(value string) string {
+	return strLoop(m.mask, 14)
 }
