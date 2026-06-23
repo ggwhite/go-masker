@@ -9,6 +9,8 @@
 *.test
 *.out
 vendor/
+examples/simple/simple
+examples/customize/customize
 
 # Test coverage
 coverage.txt
