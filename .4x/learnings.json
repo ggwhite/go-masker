@@ -180,6 +180,36 @@
       "last_used": "2026-06-23T18:06:55.171481+08:00",
       "used_count": 1,
       "status": "active"
+    },
+    {
+      "id": "L019",
+      "source_feature": "F007-v3-type-cache",
+      "category": "code-quality",
+      "content": "逐字 port 既有程式碼時，連同 inline 註解一起搬——若來源註解描述的是『修正前』的舊行為，會被一起帶入新檔；port 後應對照當前契約逐條驗證註解仍成立，否則一搬就是 stale。",
+      "created_at": "2026-06-23T18:24:39.221362+08:00",
+      "last_used": "0001-01-01T00:00:00Z",
+      "used_count": 0,
+      "status": "active"
+    },
+    {
+      "id": "L020",
+      "source_feature": "F007-v3-type-cache",
+      "category": "testing",
+      "content": "byte-identical parity port 的測試應額外覆蓋兩條路徑（如 Format vs Struct）在邊緣型別（scalar interface{} 配非 struct tag）上的分歧；只測列舉清單內情形會讓刻意/非刻意分歧都無測試守護。",
+      "created_at": "2026-06-23T18:24:39.221362+08:00",
+      "last_used": "0001-01-01T00:00:00Z",
+      "used_count": 0,
+      "status": "active"
+    },
+    {
+      "id": "L021",
+      "source_feature": "F007-v3-type-cache",
+      "category": "review",
+      "content": "效能重構（如改用 cache）的 review 應逐分支 1:1 對照原始 reflect 邏輯，並回溯近期 bugfix commit 確認各項修正在重構後完整保留，避免效能優化悄悄回退既有 fix。",
+      "created_at": "2026-06-23T18:24:39.221362+08:00",
+      "last_used": "0001-01-01T00:00:00Z",
+      "used_count": 0,
+      "status": "active"
     }
   ]
 }
