@@ -31,7 +31,7 @@ description: |
     - v3 的 Masker interface 是 Mask(value) 不是 Marshal(maskChar, value)
     - v3 的 mask char 在 MaskerMarshaler 上，不在每次呼叫
     - v3 Format() 的 error fallback 要輸出 mask chars（不洩漏原值，同 code review fix）
-status: in-progress
+status: done
 priority: 1
 subtasks:
     - id: type-cache

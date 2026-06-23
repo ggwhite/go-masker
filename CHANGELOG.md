@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Sensitive UnmarshalJSON nil mask** — mask 未綁定時回傳 error 而非靜默空值
 - **Maskers 欄位 data race** — unexport 為 maskers，強制走 Register/Get
 
-## [2.4.1] - 2026-06-23
+## [2.4.2] - 2026-06-23
 
 ### Features
 
