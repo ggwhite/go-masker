@@ -1,59 +1,55 @@
 id: F005-zap-core-interceptor
-name: "F005 zap Core interceptor: field name keyword 攔截"
-status: not-started
-priority: 2
-depends:
-  - F004-zapfield-module
+name: 'F005 zap Core interceptor: field name keyword 攔截'
 description: |
-  P2 功能。在 zap Core 層攔截 log field，根據 field name keyword 自動遮罩。
-  適用於「改不動業務 code 但想加防護」的場景。
+    P2 功能。在 zap Core 層攔截 log field，根據 field name keyword 自動遮罩。
+    適用於「改不動業務 code 但想加防護」的場景。
 
-  ## 注意
+    ## 注意
 
-  keyword matching 本質是猜測：
-  - `phone_count` 會被誤遮
-  - field name 不在 keyword list 就漏掉
+    keyword matching 本質是猜測：
+    - `phone_count` 會被誤遮
+    - field name 不在 keyword list 就漏掉
 
-  如果業務 code 已用 Sensitive[T]，這層攔截是多餘的。
-  定位是「最後一道防線」，不是主力方案。
+    如果業務 code 已用 Sensitive[T]，這層攔截是多餘的。
+    定位是「最後一道防線」，不是主力方案。
 
-  ## 目標
+    ## 目標
 
-  1. `zapfield.WrapCore(core, rules)` 包裝 zap.Core
-  2. `InterceptRules` 支援 keyword list 和 regex pattern
-  3. match 到的 string field 自動用 `masker.Mask("all", value)` 遮罩
-  4. 非 string field 不處理（避免誤殺數字等）
+    1. `zapfield.WrapCore(core, rules)` 包裝 zap.Core
+    2. `InterceptRules` 支援 keyword list 和 regex pattern
+    3. match 到的 string field 自動用 `masker.Mask("all", value)` 遮罩
+    4. 非 string field 不處理（避免誤殺數字等）
 
-  ## 使用範例
+    ## 使用範例
 
-  ```go
-  core := zapfield.WrapCore(originalCore, zapfield.InterceptRules{
-      Keywords: []string{"phone", "password", "token", "secret"},
-  })
-  logger := zap.New(core)
-  ```
+    ```go
+    core := zapfield.WrapCore(originalCore, zapfield.InterceptRules{
+        Keywords: []string{"phone", "password", "token", "secret"},
+    })
+    logger := zap.New(core)
+    ```
+status: in-progress
+priority: 2
 subtasks:
-  - id: intercept-rules
-    name: "InterceptRules 結構"
-    status: not-started
-    description: "keyword list + regex pattern 配置"
-  - id: wrap-core
-    name: "WrapCore 實作"
-    status: not-started
-    depends: [intercept-rules]
-    description: "zap.Core wrapper，攔截 Write() 中的 field"
-  - id: tests
-    name: "攔截測試"
-    status: not-started
-    depends: [wrap-core]
-    description: "keyword match / regex match / 非 string field 不攔截"
+    - id: intercept-rules
+      name: InterceptRules 結構
+      status: not-started
+      description: keyword list + regex pattern 配置
+    - id: wrap-core
+      name: WrapCore 實作
+      status: not-started
+      description: zap.Core wrapper，攔截 Write() 中的 field
+      depends:
+        - intercept-rules
+    - id: tests
+      name: 攔截測試
+      status: not-started
+      description: keyword match / regex match / 非 string field 不攔截
+      depends:
+        - wrap-core
 rules:
-  - "只攔截 string 類型的 zap field"
-  - "keyword matching 用 strings.Contains，case-insensitive"
-  - "文件必須明確警告 keyword matching 的 false positive 風險"
-acceptance:
-  - "keyword 'phone' match 到 field name 'user_phone' 並遮罩值"
-  - "keyword 'phone' match 到 field name 'phone_count' 也會遮罩（已知限制，文件標注）"
-  - "zap.Int field 即使 name match 也不被處理"
-  - "無 keyword match 的 field 保持原值"
-  - "go test -race 通過"
+    - 只攔截 string 類型的 zap field
+    - keyword matching 用 strings.Contains，case-insensitive
+    - 文件必須明確警告 keyword matching 的 false positive 風險
+depends:
+    - F004-zapfield-module
