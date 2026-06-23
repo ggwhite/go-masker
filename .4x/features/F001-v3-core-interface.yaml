@@ -24,7 +24,7 @@ description: |
 
     - docs/design/v3-design.md
     - v1 的 package-level 函式設計（`git show v1.1.0:masker.go`）
-status: ready-for-review
+status: done
 priority: 0
 subtasks:
     - id: module-setup
