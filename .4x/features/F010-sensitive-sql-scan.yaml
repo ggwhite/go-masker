@@ -1,5 +1,5 @@
 id: F010-sensitive-sql-scan
-name: "F010 Sensitive[T] SQL Scanner/Valuer"
+name: F010 Sensitive[T] SQL Scanner/Valuer
 description: |
     Sensitive[T] 實作 sql.Scanner + driver.Valuer，支援 GORM 等 ORM 直接使用。
 
@@ -28,8 +28,9 @@ description: |
     - Scan 時如何知道用哪個 mask？→ 建構時已綁定（NewPhone / NewEmail 等）
     - Value 時輸出原值（Reveal），不輸出遮罩值——DB 存的是明文
     - nil/NULL 處理：Scan(nil) 應設為 zero value
-status: not-started
+status: in-progress
 priority: 3
+profile: normal
 subtasks:
     - id: scanner
       name: 實作 sql.Scanner
@@ -50,4 +51,3 @@ rules:
     - 無外部依賴
     - Value() 必須回傳原值，不是遮罩值
     - Scan(nil) 不 panic
-depends: []
