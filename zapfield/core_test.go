@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"testing"
 
+	masker "github.com/ggwhite/go-masker/v3"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
@@ -104,5 +105,103 @@ func TestWrapCore_WithContextFieldIntercepted(t *testing.T) {
 	entry := logs.All()[0]
 	if got := fieldByKey(t, entry, "password").String; got != "*******" {
 		t.Errorf("With 帶入的 context field 應被攔截，got %q", got)
+	}
+}
+
+func TestWrapCore_RuleAppliesSpecifiedMaskerType(t *testing.T) {
+	rules := InterceptRules{
+		Rules: []Rule{
+			{Keywords: []string{"phone", "mobile"}, MaskerType: masker.TypeMobile},
+			{Keywords: []string{"password", "secret"}, MaskerType: masker.TypePassword},
+		},
+	}
+	logger, logs := newObservedLogger(rules)
+	logger.Info("login",
+		zap.String("phone", "0987654321"),
+		zap.String("password", "hunter2"),
+	)
+
+	entry := logs.All()[0]
+	if got := fieldByKey(t, entry, "phone").String; got != "0987***321" {
+		t.Errorf("phone 應套用 TypeMobile，got %q", got)
+	}
+	if got := fieldByKey(t, entry, "password").String; got != "**************" {
+		t.Errorf("password 應套用 TypePassword（固定 14 字元），got %q", got)
+	}
+}
+
+func TestWrapCore_RuleZeroMaskerTypeFallsBackToAll(t *testing.T) {
+	rules := InterceptRules{
+		Rules: []Rule{
+			{Keywords: []string{"token"}},
+		},
+	}
+	logger, logs := newObservedLogger(rules)
+	logger.Info("auth", zap.String("token", "abcdef"))
+
+	entry := logs.All()[0]
+	if got := fieldByKey(t, entry, "token").String; got != "******" {
+		t.Errorf("MaskerType zero value 應退化為全遮罩，got %q", got)
+	}
+}
+
+func TestWrapCore_RuleKeywordCaseInsensitive(t *testing.T) {
+	rules := InterceptRules{
+		Rules: []Rule{
+			{Keywords: []string{"phone"}, MaskerType: masker.TypeMobile},
+		},
+	}
+	logger, logs := newObservedLogger(rules)
+	logger.Info("ci", zap.String("UserPhone", "0987654321"))
+
+	entry := logs.All()[0]
+	if got := fieldByKey(t, entry, "UserPhone").String; got != "0987***321" {
+		t.Errorf("Rule 的 Keywords 應 case-insensitive 命中，got %q", got)
+	}
+}
+
+func TestWrapCore_RulePatternAppliesMaskerType(t *testing.T) {
+	rules := InterceptRules{
+		Rules: []Rule{
+			{Patterns: []*regexp.Regexp{regexp.MustCompile(`(?i)mobile`)}, MaskerType: masker.TypeMobile},
+		},
+	}
+	logger, logs := newObservedLogger(rules)
+	logger.Info("auth", zap.String("user_mobile", "0987654321"))
+
+	entry := logs.All()[0]
+	if got := fieldByKey(t, entry, "user_mobile").String; got != "0987***321" {
+		t.Errorf("Rule 的 Patterns 命中應套用 TypeMobile，got %q", got)
+	}
+}
+
+func TestWrapCore_TopLevelTakesPrecedenceOverRules(t *testing.T) {
+	rules := InterceptRules{
+		Keywords: []string{"phone"},
+		Rules: []Rule{
+			{Keywords: []string{"phone"}, MaskerType: masker.TypeMobile},
+		},
+	}
+	logger, logs := newObservedLogger(rules)
+	logger.Info("login", zap.String("phone", "0987654321"))
+
+	entry := logs.All()[0]
+	if got := fieldByKey(t, entry, "phone").String; got != "**********" {
+		t.Errorf("頂層 Keywords 應優先於 Rules（全遮罩），got %q", got)
+	}
+}
+
+func TestWrapCore_RuleWithContextFieldIntercepted(t *testing.T) {
+	rules := InterceptRules{
+		Rules: []Rule{
+			{Keywords: []string{"phone"}, MaskerType: masker.TypeMobile},
+		},
+	}
+	logger, logs := newObservedLogger(rules)
+	logger.With(zap.String("phone", "0987654321")).Info("ctx")
+
+	entry := logs.All()[0]
+	if got := fieldByKey(t, entry, "phone").String; got != "0987***321" {
+		t.Errorf("With 帶入的 context field 應依 Rule 套用 TypeMobile，got %q", got)
 	}
 }
