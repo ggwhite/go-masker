@@ -43,8 +43,9 @@ description: |
     func Masked(key string, maskerType masker.MaskerType, value string) slog.Attr
     func SensitiveAttr[T any](key string, s masker.Sensitive[T]) slog.Attr
     ```
-status: in-progress
+status: ready-for-review
 priority: 1
+profile: normal
 subtasks:
     - id: module-scaffold
       name: 建立 slogfield/ sub-module
