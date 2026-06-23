@@ -1,5 +1,5 @@
 id: F009-wrapcore-custom-masker
-name: "F009 WrapCore 支援自訂 masker type"
+name: F009 WrapCore 支援自訂 masker type
 description: |
     WrapCore 攔截規則支援指定 masker type，不再只能用 All 全遮罩。
 
@@ -36,8 +36,9 @@ description: |
 
     - MaskerType zero value 時行為與現在相同（全遮罩）
     - 既有 API 不變
-status: not-started
+status: in-progress
 priority: 2
+profile: quick
 subtasks:
     - id: rule-field
       name: Rule struct 加 MaskerType
@@ -58,4 +59,3 @@ subtasks:
 rules:
     - 向後相容，MaskerType 未設時行為不變
     - 不新增外部依賴
-depends: []
