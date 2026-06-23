@@ -28,7 +28,7 @@ description: |
     })
     logger := zap.New(core)
     ```
-status: in-progress
+status: ready-for-review
 priority: 2
 subtasks:
     - id: intercept-rules
