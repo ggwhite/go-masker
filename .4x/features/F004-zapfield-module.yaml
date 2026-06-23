@@ -18,7 +18,7 @@ description: |
     ## 不做（P2）
 
     - zap Core wrapper / keyword 攔截（見 zap-core-interceptor feature）
-status: in-progress
+status: ready-for-review
 priority: 1
 subtasks:
     - id: module-setup
