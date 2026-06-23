@@ -132,14 +132,12 @@ func TestSensitiveNilMaskConstructor(t *testing.T) {
 
 func TestSensitiveUnmarshalNilMask(t *testing.T) {
 	var s Sensitive[string]
-	if err := json.Unmarshal([]byte(`"secret"`), &s); err != nil {
-		t.Fatalf("Unmarshal error: %v", err)
+	err := json.Unmarshal([]byte(`"secret"`), &s)
+	if err == nil {
+		t.Fatal("expected error for nil mask, got nil")
 	}
-	if s.String() != "" {
-		t.Fatalf("String() = %q, want empty (no leak)", s.String())
-	}
-	if s.Reveal() != "secret" {
-		t.Fatalf("Reveal() = %q, want %q", s.Reveal(), "secret")
+	if s.Reveal() != "" {
+		t.Fatalf("Reveal() = %q, want zero value (unmarshal should not mutate on error)", s.Reveal())
 	}
 }
 

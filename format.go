@@ -83,7 +83,7 @@ func (m *MaskerMarshaler) writeStructMasked(b *strings.Builder, sv reflect.Value
 			if v, err := m.Marshal(f.tag, fv.String()); err == nil {
 				b.WriteString(v)
 			} else {
-				b.WriteString(fv.String())
+				b.WriteString(strLoop("*", len([]rune(fv.String()))))
 			}
 			continue
 		}
@@ -97,15 +97,6 @@ func (m *MaskerMarshaler) writeMaskedField(b *strings.Builder, fv reflect.Value,
 	switch f.kind {
 	default:
 		writeVerbatim(b, fv)
-	case reflect.String:
-		v, err := m.Marshal(f.tag, fv.String())
-		if err != nil {
-			// 與 Struct() 遇 masker 不存在會回 error 對應，Format 無法回 error，
-			// 退回原值以保確定性且不 panic。
-			b.WriteString(fv.String())
-			return
-		}
-		b.WriteString(v)
 	case reflect.Struct:
 		if f.tag == MaskerTypeStruct {
 			m.writeStructMasked(b, fv)
@@ -192,7 +183,7 @@ func (m *MaskerMarshaler) writeMaskedSlice(b *strings.Builder, fv reflect.Value,
 			}
 			v, err := m.Marshal(f.tag, fv.Index(i).String())
 			if err != nil {
-				v = fv.Index(i).String()
+				v = strLoop("*", len([]rune(fv.Index(i).String())))
 			}
 			b.WriteString(v)
 		}

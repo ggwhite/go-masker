@@ -51,10 +51,9 @@ func WithMaskChar(c rune) Option {
 
 // MaskerMarshaler 管理一組 masker 並提供 Marshal 與 Struct 等遮罩操作。
 // 所有 exported 方法皆可安全並行使用。
-// 直接存取 Maskers 欄位並非並行安全，請改用 Register/Get。
 type MaskerMarshaler struct {
 	mu       sync.RWMutex
-	Maskers  map[MaskerType]Masker
+	maskers  map[MaskerType]Masker
 	maskChar string
 }
 
@@ -70,7 +69,7 @@ func (m *MaskerMarshaler) Marshal(t MaskerType, value string) (string, error) {
 	if result, matched, err := parseGenericMask(m.maskChar, string(t), value); matched {
 		return result, err
 	}
-	masker, ok := m.Maskers[t]
+	masker, ok := m.maskers[t]
 	if !ok {
 		return "", fmt.Errorf("masker %v not found", t)
 	}
@@ -95,21 +94,21 @@ func (m *MaskerMarshaler) MustMarshal(t MaskerType, value string) string {
 func (m *MaskerMarshaler) Register(t MaskerType, masker Masker) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.Maskers[t] = masker
+	m.maskers[t] = masker
 }
 
 // Unregister 移除指定型別的 masker。
 func (m *MaskerMarshaler) Unregister(t MaskerType) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	delete(m.Maskers, t)
+	delete(m.maskers, t)
 }
 
 // Get 回傳指定型別的 masker，找不到時回傳 error。
 func (m *MaskerMarshaler) Get(t MaskerType) (Masker, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	masker, ok := m.Maskers[t]
+	masker, ok := m.maskers[t]
 	if !ok {
 		return nil, fmt.Errorf("masker %v not found", t)
 	}
@@ -121,7 +120,7 @@ func (m *MaskerMarshaler) List() []MaskerType {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var list []MaskerType
-	for t := range m.Maskers {
+	for t := range m.maskers {
 		list = append(list, t)
 	}
 	return list
@@ -243,12 +242,12 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 			case selem.Field(i).Type().Elem().Kind() == reflect.String:
 				orgval := selem.Field(i).Interface().([]string)
 				newval := make([]string, len(orgval))
-				for i, val := range selem.Field(i).Interface().([]string) {
+				for j, val := range orgval {
 					v, err := m.Marshal(MaskerType(mtag), val)
 					if err != nil {
 						return nil, err
 					}
-					newval[i] = v
+					newval[j] = v
 				}
 				tptr.Elem().Field(i).Set(reflect.ValueOf(newval))
 			case selem.Field(i).Type().Elem().Kind() == reflect.Struct && MaskerType(mtag) == TypeStruct:
@@ -296,17 +295,27 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 			if selem.Field(i).IsNil() {
 				continue
 			}
-			if MaskerType(mtag) != TypeStruct {
-				continue
-			}
-			_t, err := m.Struct(selem.Field(i).Interface())
-			if err != nil {
-				return nil, err
-			}
-			if reflect.TypeOf(selem.Field(i).Interface()).Kind() != reflect.Ptr {
-				tptr.Elem().Field(i).Set(reflect.ValueOf(_t).Elem())
+			if MaskerType(mtag) == TypeStruct {
+				_t, err := m.Struct(selem.Field(i).Interface())
+				if err != nil {
+					return nil, err
+				}
+				if reflect.TypeOf(selem.Field(i).Interface()).Kind() != reflect.Ptr {
+					tptr.Elem().Field(i).Set(reflect.ValueOf(_t).Elem())
+				} else {
+					tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+				}
 			} else {
-				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+				concrete := reflect.ValueOf(selem.Field(i).Interface())
+				if concrete.Kind() == reflect.String {
+					v, err := m.Marshal(MaskerType(mtag), concrete.String())
+					if err != nil {
+						return nil, err
+					}
+					tptr.Elem().Field(i).Set(reflect.ValueOf(v))
+				} else {
+					tptr.Elem().Field(i).Set(selem.Field(i))
+				}
 			}
 		}
 	}
@@ -363,6 +372,11 @@ func (m *MaskerMarshaler) maskMapStructValue(v reflect.Value) (reflect.Value, er
 			maskedSlice = reflect.Append(maskedSlice, maskedElem)
 		}
 		return maskedSlice, nil
+	case reflect.Interface:
+		if v.IsNil() {
+			return v, nil
+		}
+		return m.maskMapStructValue(v.Elem())
 	default:
 		return v, nil
 	}
@@ -378,7 +392,7 @@ func NewMaskerMarshaler(opts ...Option) *MaskerMarshaler {
 		opt(m)
 	}
 	c := m.maskChar
-	m.Maskers = map[MaskerType]Masker{
+	m.maskers = map[MaskerType]Masker{
 		TypeNone:     &NoneMasker{},
 		TypePassword: &PasswordMasker{mask: c},
 		TypeName:     &NameMasker{mask: c},

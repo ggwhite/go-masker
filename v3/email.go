@@ -17,7 +17,7 @@ func (m *EmailMasker) Mask(value string) string {
 		return ""
 	}
 
-	tmp := strings.Split(value, "@")
+	tmp := strings.SplitN(value, "@", 2)
 	if len(tmp) == 1 {
 		return overlay(value, strLoop(m.mask, 4), 3, 7)
 	}

@@ -80,15 +80,14 @@ func (s Sensitive[T]) Equal(other Sensitive[T]) bool {
 
 // UnmarshalJSON 實作 encoding/json.Unmarshaler，把 data 解碼進原值並用既有 mask 重算遮罩值。
 // 依賴 receiver 已綁定 mask：常見用法是先用建構子預填欄位（綁定 maskFn），再 json.Unmarshal 進該 struct，
-// 欄位既有的 mask 會被保留並用於重算。mask 為 nil 時 masked 設為空字串（不洩漏原值）。
+// 欄位既有的 mask 會被保留並用於重算。mask 為 nil 時回傳 error，避免靜默產生空遮罩值。
 func (s *Sensitive[T]) UnmarshalJSON(data []byte) error {
+	if s.mask == nil {
+		return fmt.Errorf("masker: cannot unmarshal into Sensitive[T] without a bound mask function; use a constructor (e.g. NewPhone) first")
+	}
 	if err := json.Unmarshal(data, &s.raw); err != nil {
 		return err
 	}
-	if s.mask != nil {
-		s.masked = s.mask(s.raw)
-	} else {
-		s.masked = ""
-	}
+	s.masked = s.mask(s.raw)
 	return nil
 }

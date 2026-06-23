@@ -34,7 +34,7 @@ func (r InterceptRules) match(key string) bool {
 	if len(r.Keywords) > 0 {
 		lower := strings.ToLower(key)
 		for _, kw := range r.Keywords {
-			if strings.Contains(lower, strings.ToLower(kw)) {
+			if strings.Contains(lower, kw) {
 				return true
 			}
 		}
@@ -70,6 +70,11 @@ type maskingCore struct {
 // 僅處理頂層 string 型別 field；數字、布林、結構等非 string field 一律原樣保留，
 // 巢狀 object / array 內部欄位不在此層攔截範圍。
 func WrapCore(core zapcore.Core, rules InterceptRules) zapcore.Core {
+	normalized := make([]string, len(rules.Keywords))
+	for i, kw := range rules.Keywords {
+		normalized[i] = strings.ToLower(kw)
+	}
+	rules.Keywords = normalized
 	return &maskingCore{Core: core, rules: rules}
 }
 

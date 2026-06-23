@@ -2,6 +2,7 @@ package masker
 
 import (
 	"strings"
+	"sync"
 	"unicode"
 )
 
@@ -98,7 +99,9 @@ func cleanWord(word string) string {
 
 // AbuseMasker 是以字典命中後遮罩髒話／敏感詞的 masker。
 // 須先載入詞典（透過 AddWords / AddWord 或 NewAbuseMaskerWithWords）才會遮罩，空字典時原樣回傳。
+// 所有 exported 方法皆可安全並行使用。
 type AbuseMasker struct {
+	mu   sync.RWMutex
 	trie *AbuseTrie
 	mask string
 }
@@ -123,11 +126,15 @@ func NewAbuseMaskerWithWords(maskChar string, words []string) *AbuseMasker {
 
 // AddWords 將多個敏感詞加入 masker。
 func (m *AbuseMasker) AddWords(words []string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.trie.InsertAll(words)
 }
 
 // AddWord 將單一敏感詞加入 masker。
 func (m *AbuseMasker) AddWord(word string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.trie.Insert(word)
 }
 
@@ -142,6 +149,9 @@ func (m *AbuseMasker) Mask(text string) string {
 	if text == "" {
 		return text
 	}
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
 	runes := []rune(text)
 	var result strings.Builder
@@ -175,11 +185,15 @@ func (m *AbuseMasker) Mask(text string) string {
 
 // ContainsAbuse 檢查文字是否含有任何命中字典的敏感詞。
 func (m *AbuseMasker) ContainsAbuse(text string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	abuseWords := m.trie.findAbuseWords(text)
 	return len(abuseWords) > 0
 }
 
 // GetAbuseWords 回傳文字中所有命中字典的敏感詞。
 func (m *AbuseMasker) GetAbuseWords(text string) []string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	return m.trie.findAbuseWords(text)
 }
