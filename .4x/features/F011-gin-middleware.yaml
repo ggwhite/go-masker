@@ -1,5 +1,5 @@
 id: F011-gin-middleware
-name: "F011 Gin middleware 自動遮罩 access log"
+name: F011 Gin middleware 自動遮罩 access log
 description: |
     Gin HTTP middleware，access log 自動遮罩 request/response body 的敏感欄位。
 
@@ -38,8 +38,9 @@ description: |
     func WithQueryMask(keys ...string) Option
     func WithHeaderMask(keys ...string) Option
     ```
-status: not-started
+status: in-progress
 priority: 4
+profile: full
 subtasks:
     - id: module-scaffold
       name: 建立 ginmasker/ sub-module
@@ -76,4 +77,3 @@ rules:
     - 非 JSON body 不處理
     - body replay 不能吃掉下游 handler 的 body
     - 大 body 超過 limit 時跳過遮罩
-depends: []
