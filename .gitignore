@@ -24,6 +24,7 @@ Thumbs.db
 .4x/*.bak
 .4x/*.json
 !.4x/settings.json
+!.4x/learnings.json
 .4x/*.log
 .4x/batch-*
 .4x/batch.*
