@@ -1,9 +1,5 @@
 id: F006-v2-parity
-name: "F006 v2 功能完整承繼驗證"
-status: not-started
-priority: 0
-depends:
-    - F001-v3-core-interface
+name: F006 v2 功能完整承繼驗證
 description: |
     確保 v3 完整承繼 v2 截至 PR #38 的所有功能。
     F001 負責建新 interface 和遷移 masker，本 feature 負責補齊 F001 未覆蓋的部分並驗收。
@@ -28,13 +24,14 @@ description: |
     ## 驗收方式
 
     把 v2 所有測試案例移植到 v3，逐項對照 docs/design/v2-parity.md 勾選。
+status: in-progress
+priority: 0
 subtasks:
     - id: struct-migration
       name: Struct() 完整能力遷移
       status: not-started
-      description: >
-        string/nested struct/ptr/slice/map(mapstruct)/interface/nil/error/unexported
-        全部搬到 v3 新 interface
+      description: |
+        string/nested struct/ptr/slice/map(mapstruct)/interface/nil/error/unexported 全部搬到 v3 新 interface
     - id: abuse-migration
       name: AbuseMasker + AbuseWordLoader 遷移
       status: not-started
@@ -42,25 +39,20 @@ subtasks:
     - id: api-surface
       name: API 表面驗證
       status: not-started
-      description: >
-        Register/Unregister/Get/List/SetMasker/DefaultMaskerMarshaler
-        全部在 v3 可用且行為一致
+      description: |
+        Register/Unregister/Get/List/SetMasker/DefaultMaskerMarshaler 全部在 v3 可用且行為一致
     - id: test-parity
       name: v2 測試案例移植
       status: not-started
-      depends: [struct-migration, abuse-migration, api-surface]
-      description: >
-        v2 所有 _test.go 的測試案例在 v3 都有對應覆蓋，
-        逐項對照 docs/design/v2-parity.md 確認無遺漏
+      description: |
+        v2 所有 _test.go 的測試案例在 v3 都有對應覆蓋， 逐項對照 docs/design/v2-parity.md 確認無遺漏
+      depends:
+        - struct-migration
+        - abuse-migration
+        - api-surface
 rules:
     - 遮罩結果必須與 v2 完全一致（同 input 同 output）
     - 不可為了遷移方便而刪減 v2 功能
     - docs/design/v2-parity.md 是唯一真相源，有異動要同步更新
-acceptance:
-    - v2 所有 _test.go 測試案例在 v3 有對應且通過
-    - Struct() 搭配 mapstruct tag 遞迴遮罩結果與 v2 一致
-    - AbuseMasker 搭配 struct tag 運作正常
-    - SetMasker('#') 後所有 masker 使用 '#' 遮罩
-    - DefaultMaskerMarshaler 可直接使用
-    - go test -race ./... 通過
-    - 對照 docs/design/v2-parity.md 全部勾選完畢
+depends:
+    - F001-v3-core-interface
