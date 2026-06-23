@@ -1,0 +1,49 @@
+id: zapfield-module
+name: "zapfield sub-module: zap 整合"
+status: not-started
+priority: 1
+depends:
+  - v3-core-interface
+  - sensitive-type
+description: |
+  獨立 Go module，提供 zap Field helpers 和 Sensitive[T] adapter。
+  讓 zap 使用者不需手動 `.String()` 轉接。
+
+  Module path: `github.com/ggwhite/go-masker/v3/zapfield`
+  依賴：go-masker/v3 + go.uber.org/zap
+
+  ## 目標
+
+  1. 每個 masker type 提供對應的 zap Field helper：
+     `zapfield.Phone("phone", rawValue)` → `zap.String("phone", masked)`
+  2. Sensitive[T] adapter：
+     `zapfield.Sensitive("phone", user.Phone)` → `zap.String("phone", masked)`
+  3. 獨立 go.mod，只 import go-masker/v3 的 core 不會拉進 zap
+
+  ## 不做（P2）
+
+  - zap Core wrapper / keyword 攔截（見 zap-core-interceptor feature）
+subtasks:
+  - id: module-setup
+    name: "zapfield module 結構"
+    status: not-started
+    description: "go.mod + package 基礎結構"
+  - id: field-helpers
+    name: "masker type Field helpers"
+    status: not-started
+    depends: [module-setup]
+    description: "Phone(), Email(), Password() 等 zap Field 函式"
+  - id: sensitive-adapter
+    name: "Sensitive[T] adapter"
+    status: not-started
+    depends: [module-setup]
+    description: "zapfield.Sensitive(key, Sensitive[T]) → zap.Field"
+rules:
+  - "zapfield 的 go.mod 獨立於 core，避免 zap 依賴污染 core"
+  - "Field helper 回傳值一律是 zap.Field（不是 zap.Any，避免 reflection）"
+acceptance:
+  - "go mod tidy 成功，zapfield/go.mod 有 go.uber.org/zap 依賴"
+  - "只 import go-masker/v3（不 import zapfield）時 go.sum 不包含 zap"
+  - "zapfield.Phone('phone', '0987654321') 回傳正確的 zap.Field"
+  - "zapfield.Sensitive('phone', masker.NewPhone('0987654321')) 回傳正確的 zap.Field"
+  - "go test ./zapfield/... 全部通過"
