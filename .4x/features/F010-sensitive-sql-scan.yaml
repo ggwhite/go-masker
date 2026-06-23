@@ -28,7 +28,7 @@ description: |
     - Scan 時如何知道用哪個 mask？→ 建構時已綁定（NewPhone / NewEmail 等）
     - Value 時輸出原值（Reveal），不輸出遮罩值——DB 存的是明文
     - nil/NULL 處理：Scan(nil) 應設為 zero value
-status: ready-for-review
+status: done
 priority: 3
 profile: normal
 subtasks:
