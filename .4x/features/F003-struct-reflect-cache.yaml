@@ -1,9 +1,9 @@
-id: F003
-name: "Struct() reflect cache 效能優化"
+id: F003-struct-reflect-cache
+name: "F003 Struct() reflect cache 效能優化"
 status: not-started
 priority: 1
 depends:
-  - F001
+  - F001-v3-core-interface
 description: |
   現有 Struct() 每次呼叫都重新 reflect 解析 type metadata（哪些 field 要 mask、用哪個 masker）。
   對相同 struct type 重複呼叫（如 API response masking）浪費大量 CPU。

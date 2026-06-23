@@ -1,9 +1,9 @@
-id: F002
-name: "Sensitive[T] 泛型安全型別"
+id: F002-sensitive-type
+name: "F002 Sensitive[T] 泛型安全型別"
 status: not-started
 priority: 0
 depends:
-  - F001
+  - F001-v3-core-interface
 description: |
   v3 的差異化功能。把遮罩從「開發者記得做」變成「洩漏要刻意寫 .Reveal()」。
 

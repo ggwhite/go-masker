@@ -1,10 +1,10 @@
-id: F004
-name: "zapfield sub-module: zap 整合"
+id: F004-zapfield-module
+name: "F004 zapfield sub-module: zap 整合"
 status: not-started
 priority: 1
 depends:
-  - F001
-  - F002
+  - F001-v3-core-interface
+  - F002-sensitive-type
 description: |
   獨立 Go module，提供 zap Field helpers 和 Sensitive[T] adapter。
   讓 zap 使用者不需手動 `.String()` 轉接。
