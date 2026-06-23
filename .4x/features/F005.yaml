@@ -1,9 +1,9 @@
-id: zap-core-interceptor
+id: F005
 name: "zap Core interceptor: field name keyword 攔截"
 status: not-started
 priority: 2
 depends:
-  - zapfield-module
+  - F004
 description: |
   P2 功能。在 zap Core 層攔截 log field，根據 field name keyword 自動遮罩。
   適用於「改不動業務 code 但想加防護」的場景。
