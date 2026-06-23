@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-06-23
+
+### Features
+
+- **slogfield sub-module** — `github.com/ggwhite/go-masker/v3/slogfield`，提供 `slog.Attr` helper 函式（Phone、Email、Name 等），與 zapfield 對等的 slog 版本
+- **WrapCore 自訂 masker type** — `zapfield.Rule` 新增 `MaskerType` 欄位，攔截時可指定遮罩型別（如 `TypeMobile`），不再只能全遮罩；zero value 維持向後相容
+- **Sensitive[T] SQL Scanner/Valuer** — 實作 `sql.Scanner` + `driver.Valuer`，ORM model 敏感欄位可直接宣告為 `Sensitive[string]`，DB 讀寫自動處理
+- **ginmasker sub-module** — `github.com/ggwhite/go-masker/v3/ginmasker`，Gin middleware 自動遮罩 access log 中的 request/response body、query、header 敏感欄位
+- **Sensitive[T] Redact 模式** — `WithRedact()` 建構選項，輸出 `[REDACTED]` 取代部分遮罩，適用於合規場景與對外 API response
+
+### Internal
+
+- **CI 更新** — GitHub Actions 升級至 Go 1.22、移除舊 v3 子目錄 job、新增 zapfield job
+
 ## [3.0.0] - 2026-06-23
 
 ### Breaking Changes

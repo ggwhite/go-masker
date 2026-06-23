@@ -16,7 +16,7 @@ Go Masker is a simple and extensible library for masking sensitive data in Go st
 go get -u github.com/ggwhite/go-masker/v3
 ```
 
-Requires Go 1.17+.
+Requires Go 1.22+.
 
 ## Quick Start
 
@@ -62,6 +62,52 @@ You can also use the package-level default instance:
 ```go
 masked, err := masker.DefaultMaskerMarshaler.Struct(u)
 ```
+
+## Sensitive[T] — Type-Safe Masking
+
+`Sensitive[T]` wraps a value so that all automatic output (fmt, JSON, slog) is masked. You must call `.Reveal()` to get the original value — leaking data requires an explicit opt-in.
+
+```go
+phone := masker.NewPhone("0987654321")
+
+fmt.Println(phone)          // 0987***321
+fmt.Println(phone.Reveal()) // 0987654321
+
+b, _ := json.Marshal(phone) // "0987***321"
+```
+
+Built-in constructors: `NewPhone`, `NewEmail`, `NewPassword`, `NewID`, `NewCredit`, `NewName`, `NewAddress`, `NewTel`, `NewURL`.
+
+### Redact Mode
+
+For compliance scenarios where partial masking is not enough:
+
+```go
+phone := masker.NewPhone("0987654321", masker.WithRedact())
+fmt.Println(phone)          // [REDACTED]
+fmt.Println(phone.Reveal()) // 0987654321
+
+// Custom redact text
+phone2 := masker.NewPhone("0987654321", masker.WithRedactText("***"))
+fmt.Println(phone2)         // ***
+```
+
+### Database Integration
+
+`Sensitive[T]` implements `sql.Scanner` and `driver.Valuer`, so it works directly with GORM and other ORMs:
+
+```go
+type Player struct {
+    Phone masker.Sensitive[string] `gorm:"column:phone"`
+}
+
+// db.Find(&player) → auto scan + bind mask
+// fmt.Println(player.Phone) → 0987***321 (masked)
+// player.Phone.Reveal() → original value
+```
+
+- `Value()` returns the original value (DB stores plaintext)
+- `Scan(nil)` sets to zero value without panic
 
 ## Format — Log-Friendly Output
 
@@ -198,11 +244,10 @@ masked, _ := m.Struct(Payload{
 
 ## Custom Mask Character
 
-By default, `*` is used as the mask character. Use `SetMasker` to change it:
+By default, `*` is used as the mask character. Use `WithMaskChar` to change it:
 
 ```go
-m := masker.NewMaskerMarshaler()
-m.SetMasker("#")
+m := masker.NewMaskerMarshaler(masker.WithMaskChar('#'))
 
 masked, _ := m.Struct(u)
 // Name "John" -> "J##n"
@@ -215,12 +260,10 @@ The abuse masker uses a trie for efficient word matching and replacement.
 ### Basic Usage
 
 ```go
-abuseWords := []string{"bad", "terrible", "awful"}
-abuseMasker := masker.NewAbuseMaskerWithWords(abuseWords)
+abuseMasker := masker.NewAbuseMaskerWithWords("*", []string{"bad", "terrible", "awful"})
 
-text := "This is a bad and terrible situation"
-masked := abuseMasker.Marshal("*", text)
-// Output: "This is a *** and ******** situation"
+masked := abuseMasker.Mask("This is a bad and terrible situation")
+// "This is a *** and ******** situation"
 ```
 
 ### Load Words from File
@@ -231,7 +274,7 @@ words, err := loader.LoadFromFile("abuse_words.txt")
 if err != nil {
     log.Fatal(err)
 }
-abuseMasker := masker.NewAbuseMaskerWithWords(words)
+abuseMasker := masker.NewAbuseMaskerWithWords("*", words)
 ```
 
 ### Use with Struct Tags
@@ -243,7 +286,7 @@ type Post struct {
 }
 
 m := masker.NewMaskerMarshaler()
-m.Register(masker.MaskerTypeAbuse, masker.NewAbuseMaskerWithWords([]string{"bad"}))
+m.Register(masker.TypeAbuse, masker.NewAbuseMaskerWithWords("*", []string{"bad"}))
 
 masked, _ := m.Struct(&Post{Title: "Hello", Content: "bad content"})
 ```
@@ -254,7 +297,7 @@ Implement the `Masker` interface to create your own masker:
 
 ```go
 type Masker interface {
-    Marshal(maskChar string, value string) string
+    Mask(value string) string
 }
 ```
 
@@ -263,11 +306,11 @@ Example:
 ```go
 type SSNMasker struct{}
 
-func (m *SSNMasker) Marshal(s, i string) string {
-    if len(i) != 9 {
-        return i
+func (m *SSNMasker) Mask(value string) string {
+    if len(value) != 9 {
+        return value
     }
-    return "***-**-" + i[7:]
+    return "***-**-" + value[7:]
 }
 
 m := masker.NewMaskerMarshaler()
@@ -278,6 +321,71 @@ type Person struct {
 }
 ```
 
+## Sub-Modules
+
+Optional sub-modules for integrating masking into your logging and HTTP stack. Each is a separate `go get` — they don't add dependencies to the core module.
+
+### zapfield — Zap Logger Integration
+
+```bash
+go get github.com/ggwhite/go-masker/v3/zapfield
+```
+
+```go
+import "github.com/ggwhite/go-masker/v3/zapfield"
+
+logger.Info("user login",
+    zapfield.Phone("phone", "0987654321"),  // 0987***321
+    zapfield.Email("email", "john@g.com"),  // joh****@g.com
+)
+```
+
+WrapCore intercepts log fields by keyword, with per-rule masker type support:
+
+```go
+core = zapfield.WrapCore(core, zapfield.InterceptRules{
+    Rules: []zapfield.Rule{
+        {Keywords: []string{"phone", "mobile"}, MaskerType: masker.TypeMobile},
+        {Keywords: []string{"password", "secret"}, MaskerType: masker.TypePassword},
+    },
+})
+```
+
+### slogfield — slog Integration
+
+```bash
+go get github.com/ggwhite/go-masker/v3/slogfield
+```
+
+```go
+import "github.com/ggwhite/go-masker/v3/slogfield"
+
+slog.Info("user login",
+    slogfield.Phone("phone", "0987654321"),  // 0987***321
+    slogfield.Email("email", "john@g.com"),  // joh****@g.com
+)
+```
+
+### ginmasker — Gin Middleware
+
+```bash
+go get github.com/ggwhite/go-masker/v3/ginmasker
+```
+
+Access log middleware that automatically masks sensitive fields in request/response JSON body. Only affects log output — never modifies the actual request or response.
+
+```go
+import "github.com/ggwhite/go-masker/v3/ginmasker"
+
+r := gin.New()
+r.Use(ginmasker.Middleware(
+    ginmasker.WithLogger(logger),
+    ginmasker.WithKeywords("password", "token", "secret"),
+    ginmasker.WithQueryMask("api_key"),
+    ginmasker.WithHeaderMask("Authorization"),
+))
+```
+
 ## Performance
 
 `Struct()` caches type metadata on first call via `sync.Map`, so repeated calls on the same struct type skip reflection overhead. Benchmarks show ≥ 50% improvement on subsequent calls.
@@ -286,15 +394,14 @@ type Person struct {
 
 ## Migration from v2
 
-The module path changes from `github.com/ggwhite/go-masker/v2` to `github.com/ggwhite/go-masker/v3`. Update your imports accordingly. The API is backward-compatible — existing code works after updating the import path.
+The module path changes from `github.com/ggwhite/go-masker/v2` to `github.com/ggwhite/go-masker/v3`. Key API changes:
 
-New features added since v2.2:
-
-| Version | Feature |
-|---------|---------|
-| v2.3.0  | `all`, `first-N`, `last-N` dynamic mask tags |
-| v2.4.0  | `mapstruct` recursive map masking |
-| v2.4.2  | `Format()` log-friendly output, `Struct()` type cache |
+| v2 | v3 |
+|---|---|
+| `Masker.Marshal(maskChar, value)` | `Masker.Mask(value)` |
+| `MaskerTypeMobile` | `TypeMobile` |
+| `m.SetMasker("#")` | `NewMaskerMarshaler(WithMaskChar('#'))` |
+| `NewAbuseMaskerWithWords(words)` | `NewAbuseMaskerWithWords("*", words)` |
 
 ## Contributors
 
