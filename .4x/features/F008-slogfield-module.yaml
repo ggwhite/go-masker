@@ -43,7 +43,7 @@ description: |
     func Masked(key string, maskerType masker.MaskerType, value string) slog.Attr
     func SensitiveAttr[T any](key string, s masker.Sensitive[T]) slog.Attr
     ```
-status: ready-for-review
+status: done
 priority: 1
 profile: normal
 subtasks:
