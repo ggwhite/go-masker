@@ -7,18 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Features (v3)
+## [3.0.0] - 2026-06-23
 
-- **v3 module** — 全新 `github.com/ggwhite/go-masker/v3`（Go 1.21+），包含：
-  - 新 `Masker` interface：`Mask(value string) string`（移除 mask char 參數）
-  - Functional option `WithMaskChar` 配置遮罩字元
-  - Package-level 便利函式：`masker.Mobile()`、`masker.Email()` 等
-  - `MaskerType` 精簡命名（`TypeMobile` 取代 `MaskerTypeMobile`）
+### Breaking Changes
+
+- **Module path 升級** — `github.com/ggwhite/go-masker/v2` → `github.com/ggwhite/go-masker/v3`，需更新 import path
+- **Masker interface 簡化** — `Marshal(maskChar, value string) string` → `Mask(value string) string`，mask char 改由 `WithMaskChar` option 設定
+- **MaskerType 精簡命名** — `MaskerTypeMobile` → `TypeMobile`、`MaskerTypeEmail` → `TypeEmail` 等
+- **Go 最低版本** — 1.17 → 1.22
+
+### Features
+
+- **Functional options** — `NewMaskerMarshaler(WithMaskChar("#"))` 取代 `SetMasker()`
+- **Package-level 便利函式** — `masker.Mobile()`、`masker.Email()` 等，免建 marshaler 直接遮罩
 - **Sensitive[T] 泛型安全型別** — 把遮罩從「開發者記得做」變成「洩漏要刻意寫 `.Reveal()`」，自動安全輸出至 fmt/json/slog
 - **zapfield sub-module** — `github.com/ggwhite/go-masker/v3/zapfield`，提供 zap Field helpers 與 `Sensitive[T]` adapter
 - **zap Core interceptor** — `WrapCore` 以 keyword/regex 攔截 log field 的最後一道防線
 
-### Fixes (v3)
+### Fixes
 
 - **abuse trie data race** — AbuseMasker 加 sync.RWMutex，防止 AddWord 與 Mask 併發存取
 - **interface{} 欄位歸零** — Struct() 不再靜默歸零非 struct tag 的 interface 欄位，改為遮罩底層 string
