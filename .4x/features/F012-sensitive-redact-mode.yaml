@@ -28,7 +28,7 @@ description: |
     - redact 是建構時決定，不可事後切換（避免 race）
     - [REDACTED] 字串可透過 WithRedactText("***") 自訂
     - JSON output: `"[REDACTED]"` 或 `null`？→ 預設字串，可配置
-status: in-progress
+status: ready-for-review
 priority: 5
 profile: quick
 subtasks:
