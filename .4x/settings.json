@@ -1,12 +1,124 @@
 {
   "project": {
-    "name": "go-masker"
+    "name": "go-masker",
+    "description": "Go library for masking sensitive data via struct tags. v2 stable, v3 in development.",
+    "language": "go",
+    "build": [
+      "go build ./...",
+      "cd v3 && go build ./..."
+    ],
+    "test": [
+      "go test -race -count=1 ./...",
+      "cd v3 && go test -race -count=1 ./..."
+    ],
+    "lint": [
+      "go vet ./...",
+      "cd v3 && go vet ./..."
+    ],
+    "docs": [
+      "docs/AGENTS.md",
+      "docs/design/v3-design.md",
+      "docs/design/v2-parity.md"
+    ],
+    "rules": [
+      "v2 的遮罩結果是 v3 的 ground truth — 同 input 必須同 output",
+      "core package 零外部依賴",
+      "遵循 gofmt，go vet 不能有 warning",
+      "每個 masker type 一個檔案（mobile.go, email.go...）",
+      "所有 exported 函式必須有繁體中文 GoDoc 註解（名稱開頭）",
+      "error handling 不省略，要明確處理",
+      "不使用大陸拼音命名，用標準英文術語"
+    ],
+    "includes": [
+      "CLAUDE.md"
+    ]
   },
-  "runners": null,
+  "isolation": "worktree",
   "default_runner": "claude",
-  "deep_model": "opus",
-  "build": "cd v3 && go build ./...",
-  "test": "cd v3 && go test -race -count=1 ./...",
-  "lint": "cd v3 && go vet ./...",
-  "workspace": {}
+  "max_concurrent_runs": 1,
+  "commit": "per-round",
+  "parallel_review_test": true,
+  "auto_discover_features": true,
+  "default_profile": "full",
+  "profiles": {
+    "full": {
+      "phases": [
+        {"phase": "designing"},
+        {"phase": "design-reviewing"},
+        {"phase": "coding"},
+        {"phase": "reviewing"},
+        {"phase": "deep-reviewing"},
+        {"phase": "testing"},
+        {"phase": "accepting"}
+      ]
+    },
+    "normal": {
+      "phases": [
+        {"phase": "coding"},
+        {"phase": "reviewing"},
+        {"phase": "testing"},
+        {"phase": "accepting"}
+      ]
+    },
+    "quick": {
+      "phases": [
+        {"phase": "coding"},
+        {"phase": "reviewing"}
+      ]
+    }
+  },
+  "roles": {
+    "designer": {
+      "model": "opus",
+      "instructions": [
+        "先讀 docs/AGENTS.md 和 docs/design/ 下相關文件了解架構",
+        "task-brief 要具體到檔名和函式名，Coder 不需要猜",
+        "acceptance-criteria 每項都要可自動化驗證（go test / CLI output）",
+        "v3 相關 feature 必須參照 docs/design/v3-design.md 和 docs/design/v2-parity.md"
+      ]
+    },
+    "design-reviewer": {
+      "model": "opus",
+      "instructions": [
+        "逐項比對 task-brief 與 feature YAML description 的需求——有遺漏或矛盾就 FAIL",
+        "檢查 acceptance-criteria 是否每項都可自動化驗證，模糊描述就 FAIL",
+        "v3 feature 必須檢查是否涵蓋 docs/design/v2-parity.md 中的相關項目"
+      ]
+    },
+    "coder": {
+      "model": "opus",
+      "instructions": [
+        "每次改動後跑 go build ./... && go vet ./... && go test -race ./...",
+        "v3 程式碼在 v3/ 子目錄，v2 在根目錄——不要混改",
+        "遮罩邏輯變動必須同時更新對應的 _test.go"
+      ]
+    },
+    "reviewer": {
+      "model": "opus",
+      "deep_model": "opus",
+      "instructions": [
+        "確認新增的 public function 有繁體中文 GoDoc",
+        "檢查 error handling — Go 的 error 不能被忽略",
+        "v3 feature 比對 v2 遮罩結果是否一致"
+      ]
+    },
+    "deep-reviewer": {
+      "max_fix_rounds": 2,
+      "parallel_reviewers": 3
+    },
+    "tester": {
+      "model": "opus",
+      "instructions": [
+        "verify.json 必須每項 AC 都有對應的 pass/fail 結果",
+        "go test -race 必須通過，coverage 不能低於現有水準"
+      ]
+    },
+    "acceptor": {
+      "model": "opus",
+      "instructions": [
+        "必須讀取所有 round 的 review-report、test-report、deep-review-report，不只最後一輪",
+        "對 OPEN 的 issue 要誠實標註，不可隱藏未解決的問題"
+      ]
+    }
+  }
 }
