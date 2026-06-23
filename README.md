@@ -32,7 +32,7 @@ Go Masker is a simple and extensible library for masking sensitive data in Go st
 ## Install
 
 ```bash
-go get -u github.com/ggwhite/go-masker/v2
+go get -u github.com/ggwhite/go-masker/v3
 ```
 
 Requires Go 1.17+.
@@ -45,7 +45,7 @@ package main
 import (
     "fmt"
 
-    masker "github.com/ggwhite/go-masker/v2"
+    masker "github.com/ggwhite/go-masker/v3"
 )
 
 type User struct {
@@ -305,7 +305,7 @@ type Person struct {
 
 ## Migration from v2
 
-The module path remains `github.com/ggwhite/go-masker/v2`. This release is backward-compatible — existing code works without changes.
+The module path changes from `github.com/ggwhite/go-masker/v2` to `github.com/ggwhite/go-masker/v3`. Update your imports accordingly. The API is backward-compatible — existing code works after updating the import path.
 
 New features added since v2.2:
 

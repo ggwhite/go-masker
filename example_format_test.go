@@ -3,7 +3,7 @@ package masker_test
 import (
 	"fmt"
 
-	masker "github.com/ggwhite/go-masker/v2"
+	masker "github.com/ggwhite/go-masker/v3"
 )
 
 type formatExampleFoo struct {

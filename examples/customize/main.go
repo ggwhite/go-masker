@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/ggwhite/go-masker/v2"
+	"github.com/ggwhite/go-masker/v3"
 )
 
 type MyEmailMasker struct{}

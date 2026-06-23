@@ -9,10 +9,10 @@ A Go library for masking sensitive data via struct tags.
 ## Module
 
 ```
-github.com/ggwhite/go-masker/v2
+github.com/ggwhite/go-masker/v3
 ```
 
-Requires Go 1.17+.
+Requires Go 1.22+.
 
 ## Project Structure
 

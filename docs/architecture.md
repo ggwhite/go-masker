@@ -3,10 +3,10 @@
 ## Module
 
 ```
-github.com/ggwhite/go-masker/v2
+github.com/ggwhite/go-masker/v3
 ```
 
-Go 1.17+. Zero external dependencies.
+Go 1.22+. Zero external dependencies.
 
 ## Design
 

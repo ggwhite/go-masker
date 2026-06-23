@@ -1,7 +1,7 @@
-module github.com/ggwhite/go-masker/v2/example/simple
+module github.com/ggwhite/go-masker/v3/example/simple
 
-go 1.19
+go 1.22
 
-require github.com/ggwhite/go-masker/v2 v2.0.0
+require github.com/ggwhite/go-masker/v3 v3.0.0
 
-replace github.com/ggwhite/go-masker/v2 => ../../
+replace github.com/ggwhite/go-masker/v3 => ../../
