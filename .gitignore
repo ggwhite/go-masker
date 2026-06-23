@@ -1,4 +1,34 @@
-.vscode
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Test coverage
 coverage.txt
 .cover
+coverage.out
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 4x runtime (track settings + features, ignore everything else)
+.4x/*/
+.4x/*.bak
+.4x/batch-*
+.4x/batch.*
+!.4x/settings.json
+!.4x/features/
+
+# Worktrees
+.worktrees/
+
+# Superpowers
+.superpowers/
