@@ -17,7 +17,7 @@ description: |
     - 同 type 第二次以上呼叫 Struct()，CPU 開銷降低 ≥ 50%
     - Format() 的 alloc 數量少於 Struct()（不建新 struct）
     - benchmark 數據用 `go test -bench` 驗證
-status: ready-for-review
+status: done
 priority: 1
 subtasks:
     - id: type-cache
