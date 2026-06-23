@@ -10,25 +10,6 @@ Go Masker is a simple and extensible library for masking sensitive data in Go st
 
 > Looking for v2? See the [`release/v2`](https://github.com/ggwhite/go-masker/tree/release/v2) branch.
 
-- [Go Masker](#go-masker)
-  - [Install](#install)
-  - [Quick Start](#quick-start)
-  - [Format — Log-Friendly Output](#format--log-friendly-output)
-  - [Masker Types](#masker-types)
-    - [Dynamic Mask Tags](#dynamic-mask-tags)
-    - [Masking Slices](#masking-slices)
-    - [Masking Nested Structs](#masking-nested-structs)
-    - [Masking Maps](#masking-maps)
-  - [Custom Mask Character](#custom-mask-character)
-  - [Abuse Masker](#abuse-masker)
-    - [Basic Usage](#basic-usage)
-    - [Load Words from File](#load-words-from-file)
-    - [Use with Struct Tags](#use-with-struct-tags)
-  - [Custom Masker](#custom-masker)
-  - [Performance](#performance)
-  - [Migration from v2](#migration-from-v2)
-  - [Contributors](#contributors)
-
 ## Install
 
 ```bash
