@@ -1,66 +1,62 @@
 id: F001-v3-core-interface
-name: "F001 v3 core: 新 Masker interface + package-level 短函式"
-status: not-started
-priority: 0
+name: 'F001 v3 core: 新 Masker interface + package-level 短函式'
 description: |
-  v3 的基礎建設。所有後續 feature 依賴此項。
+    v3 的基礎建設。所有後續 feature 依賴此項。
 
-  ## 目標
+    ## 目標
 
-  1. 建立 v3 module（`github.com/ggwhite/go-masker/v3`，Go 1.21+）
-  2. 新 `Masker` interface：`Mask(value string) string`，移除 mask char 參數
-  3. mask char 改用 functional option（`WithMaskChar(c rune)`）配置在 `MaskerMarshaler` 上
-  4. MaskerType 常數精簡命名：`MaskerTypeMobile` → `TypeMobile`
-  5. 恢復 package-level 便利函式：`masker.Mobile(v)`、`masker.Email(v)` 等
-  6. 遷移所有現有 masker（mobile/email/password/name/addr/id/credit/tel/url/none/abuse/all）到新 interface
-  7. `first-N` / `last-N` generic mask 保留
-  8. `Marshal()` 保留但精簡（考慮移除 error return 或加 `MustMarshal`）
+    1. 建立 v3 module（`github.com/ggwhite/go-masker/v3`，Go 1.21+）
+    2. 新 `Masker` interface：`Mask(value string) string`，移除 mask char 參數
+    3. mask char 改用 functional option（`WithMaskChar(c rune)`）配置在 `MaskerMarshaler` 上
+    4. MaskerType 常數精簡命名：`MaskerTypeMobile` → `TypeMobile`
+    5. 恢復 package-level 便利函式：`masker.Mobile(v)`、`masker.Email(v)` 等
+    6. 遷移所有現有 masker（mobile/email/password/name/addr/id/credit/tel/url/none/abuse/all）到新 interface
+    7. `first-N` / `last-N` generic mask 保留
+    8. `Marshal()` 保留但精簡（考慮移除 error return 或加 `MustMarshal`）
 
-  ## 不做
+    ## 不做
 
-  - Sensitive[T]（獨立 feature）
-  - Struct() 改動（獨立 feature）
-  - Logger 整合（獨立 feature）
+    - Sensitive[T]（獨立 feature）
+    - Struct() 改動（獨立 feature）
+    - Logger 整合（獨立 feature）
 
-  ## 設計參考
+    ## 設計參考
 
-  - docs/design/v3-design.md
-  - v1 的 package-level 函式設計（`git show v1.1.0:masker.go`）
+    - docs/design/v3-design.md
+    - v1 的 package-level 函式設計（`git show v1.1.0:masker.go`）
+status: in-progress
+priority: 0
 subtasks:
-  - id: module-setup
-    name: "建立 v3 module 結構"
-    status: not-started
-    description: "新 go.mod（Go 1.21+）、package 結構、CI"
-  - id: new-masker-interface
-    name: "新 Masker interface + functional options"
-    status: not-started
-    depends: [module-setup]
-    description: "Mask(value string) string + WithMaskChar option"
-  - id: migrate-maskers
-    name: "遷移所有既有 masker 到新 interface"
-    status: not-started
-    depends: [new-masker-interface]
-    description: "mobile/email/password/name/addr/id/credit/tel/url/none/abuse/all + generic"
-  - id: convenience-functions
-    name: "Package-level 便利函式"
-    status: not-started
-    depends: [migrate-maskers]
-    description: "masker.Mobile(), masker.Email() 等頂層函式"
-  - id: marshal-cleanup
-    name: "Marshal/MustMarshal 精簡"
-    status: not-started
-    depends: [migrate-maskers]
-    description: "精簡 MaskerMarshaler 的公開 API"
+    - id: module-setup
+      name: 建立 v3 module 結構
+      status: not-started
+      description: 新 go.mod（Go 1.21+）、package 結構、CI
+    - id: new-masker-interface
+      name: 新 Masker interface + functional options
+      status: not-started
+      description: Mask(value string) string + WithMaskChar option
+      depends:
+        - module-setup
+    - id: migrate-maskers
+      name: 遷移所有既有 masker 到新 interface
+      status: not-started
+      description: mobile/email/password/name/addr/id/credit/tel/url/none/abuse/all + generic
+      depends:
+        - new-masker-interface
+    - id: convenience-functions
+      name: Package-level 便利函式
+      status: not-started
+      description: masker.Mobile(), masker.Email() 等頂層函式
+      depends:
+        - migrate-maskers
+    - id: marshal-cleanup
+      name: Marshal/MustMarshal 精簡
+      status: not-started
+      description: 精簡 MaskerMarshaler 的公開 API
+      depends:
+        - migrate-maskers
 rules:
-  - "所有既有 masker 的遮罩邏輯不變，只改 interface 簽名"
-  - "core package 零外部依賴"
-  - "所有 exported 函式必須有 GoDoc（繁體中文內容，名稱開頭）"
-  - "每個 masker 保留獨立檔案（mobile.go, email.go...）"
-acceptance:
-  - "go mod tidy 成功，go.mod 顯示 go 1.21"
-  - "masker.Mobile('0987654321') 回傳 '0987***321'"
-  - "masker.Email('ggw@gmail.com') 回傳 'ggw****@gmail.com'"
-  - "所有 v2 masker type 都有對應的 package-level 函式"
-  - "自訂 masker 可透過 Register() + 新 Masker interface 註冊"
-  - "go test ./... 全部通過，coverage ≥ 80%"
-  - "go vet / golint 無警告"
+    - 所有既有 masker 的遮罩邏輯不變，只改 interface 簽名
+    - core package 零外部依賴
+    - 所有 exported 函式必須有 GoDoc（繁體中文內容，名稱開頭）
+    - 每個 masker 保留獨立檔案（mobile.go, email.go...）
