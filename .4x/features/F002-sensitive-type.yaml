@@ -1,91 +1,87 @@
 id: F002-sensitive-type
-name: "F002 Sensitive[T] 泛型安全型別"
-status: not-started
-priority: 0
-depends:
-  - F001-v3-core-interface
+name: F002 Sensitive[T] 泛型安全型別
 description: |
-  v3 的差異化功能。把遮罩從「開發者記得做」變成「洩漏要刻意寫 .Reveal()」。
+    v3 的差異化功能。把遮罩從「開發者記得做」變成「洩漏要刻意寫 .Reveal()」。
 
-  ## 目標
+    ## 目標
 
-  1. `Sensitive[T]` 泛型 struct，內部存 raw value + 預算好的 masked string
-  2. 實作安全輸出 interface：
-     - `fmt.Stringer` — `String()` 回傳遮罩值
-     - `fmt.GoStringer` — `GoString()` 回傳遮罩值（防 %#v）
-     - `encoding/json.Marshaler` — `MarshalJSON()` 輸出遮罩值
-     - `encoding.TextMarshaler` — `MarshalText()` 輸出遮罩值
-     - `log/slog.LogValuer` — `LogValue()` 回傳遮罩值
-  3. `Reveal()` 是取得原始值的唯一途徑
-  4. 每個內建 masker type 提供對應建構子：
-     `NewPhone(v)`, `NewEmail(v)`, `NewPassword(v)`, `NewID(v)`, `NewCredit(v)`,
-     `NewName(v)`, `NewAddress(v)`, `NewTel(v)`, `NewURL(v)`
-  5. 通用建構子 `NewSensitive[T](raw T, maskFn func(T) string)` 支援自訂遮罩邏輯
-  6. `Equal(other)` 比較兩個 Sensitive 值（不暴露原值）
-  7. `json.Unmarshaler` — `UnmarshalJSON()` 能從原始 JSON 值建立 Sensitive
+    1. `Sensitive[T]` 泛型 struct，內部存 raw value + 預算好的 masked string
+    2. 實作安全輸出 interface：
+       - `fmt.Stringer` — `String()` 回傳遮罩值
+       - `fmt.GoStringer` — `GoString()` 回傳遮罩值（防 %#v）
+       - `encoding/json.Marshaler` — `MarshalJSON()` 輸出遮罩值
+       - `encoding.TextMarshaler` — `MarshalText()` 輸出遮罩值
+       - `log/slog.LogValuer` — `LogValue()` 回傳遮罩值
+    3. `Reveal()` 是取得原始值的唯一途徑
+    4. 每個內建 masker type 提供對應建構子：
+       `NewPhone(v)`, `NewEmail(v)`, `NewPassword(v)`, `NewID(v)`, `NewCredit(v)`,
+       `NewName(v)`, `NewAddress(v)`, `NewTel(v)`, `NewURL(v)`
+    5. 通用建構子 `NewSensitive[T](raw T, maskFn func(T) string)` 支援自訂遮罩邏輯
+    6. `Equal(other)` 比較兩個 Sensitive 值（不暴露原值）
+    7. `json.Unmarshaler` — `UnmarshalJSON()` 能從原始 JSON 值建立 Sensitive
 
-  ## 設計決策
+    ## 設計決策
 
-  - 建構時就算好 masked string 並快取，之後取值零成本（一次 alloc）
-  - `raw` field 為 unexported，防止 reflect 讀取（除非用 unsafe）
-  - Sensitive[T] 是 value type（struct），不是 pointer，語意更清楚
-  - UnmarshalJSON 需要知道用哪個 masker — 透過建構子綁定的 maskFn 處理
+    - 建構時就算好 masked string 並快取，之後取值零成本（一次 alloc）
+    - `raw` field 為 unexported，防止 reflect 讀取（除非用 unsafe）
+    - Sensitive[T] 是 value type（struct），不是 pointer，語意更清楚
+    - UnmarshalJSON 需要知道用哪個 masker — 透過建構子綁定的 maskFn 處理
 
-  ## 使用範例
+    ## 使用範例
 
-  ```go
-  type SMSRequest struct {
-      Phone   masker.Sensitive[string] `json:"phone"`
-      Message string                   `json:"message"`
-  }
+    ```go
+    type SMSRequest struct {
+        Phone   masker.Sensitive[string] `json:"phone"`
+        Message string                   `json:"message"`
+    }
 
-  req := SMSRequest{
-      Phone:   masker.NewPhone("0987654321"),
-      Message: "驗證碼 1234",
-  }
+    req := SMSRequest{
+        Phone:   masker.NewPhone("0987654321"),
+        Message: "驗證碼 1234",
+    }
 
-  fmt.Println(req.Phone)        // 0987***321
-  json.Marshal(req)             // {"phone":"0987***321","message":"驗證碼 1234"}
-  slog.Info("sms", "req", req)  // phone=0987***321
+    fmt.Println(req.Phone)        // 0987***321
+    json.Marshal(req)             // {"phone":"0987***321","message":"驗證碼 1234"}
+    slog.Info("sms", "req", req)  // phone=0987***321
 
-  sms.Send(req.Phone.Reveal())  // 用原值
-  ```
+    sms.Send(req.Phone.Reveal())  // 用原值
+    ```
+status: in-progress
+priority: 0
 subtasks:
-  - id: sensitive-struct
-    name: "Sensitive[T] 核心 struct"
-    status: not-started
-    description: "泛型 struct + raw/masked 欄位 + Reveal()"
-  - id: safe-output
-    name: "安全輸出 interface 實作"
-    status: not-started
-    depends: [sensitive-struct]
-    description: "Stringer, GoStringer, json.Marshaler, TextMarshaler, slog.LogValuer"
-  - id: constructors
-    name: "內建 masker type 建構子"
-    status: not-started
-    depends: [sensitive-struct]
-    description: "NewPhone, NewEmail, NewPassword 等 + 通用 NewSensitive"
-  - id: unmarshal
-    name: "JSON UnmarshalJSON 支援"
-    status: not-started
-    depends: [safe-output, constructors]
-    description: "從 JSON 反序列化時能正確建立 Sensitive"
-  - id: equality
-    name: "Equal 比較"
-    status: not-started
-    depends: [sensitive-struct]
-    description: "安全比較兩個 Sensitive 值"
+    - id: sensitive-struct
+      name: Sensitive[T] 核心 struct
+      status: not-started
+      description: 泛型 struct + raw/masked 欄位 + Reveal()
+    - id: safe-output
+      name: 安全輸出 interface 實作
+      status: not-started
+      description: Stringer, GoStringer, json.Marshaler, TextMarshaler, slog.LogValuer
+      depends:
+        - sensitive-struct
+    - id: constructors
+      name: 內建 masker type 建構子
+      status: not-started
+      description: NewPhone, NewEmail, NewPassword 等 + 通用 NewSensitive
+      depends:
+        - sensitive-struct
+    - id: unmarshal
+      name: JSON UnmarshalJSON 支援
+      status: not-started
+      description: 從 JSON 反序列化時能正確建立 Sensitive
+      depends:
+        - safe-output
+        - constructors
+    - id: equality
+      name: Equal 比較
+      status: not-started
+      description: 安全比較兩個 Sensitive 值
+      depends:
+        - sensitive-struct
 rules:
-  - "Sensitive[T] 的 raw field 必須 unexported"
-  - "任何 String()/GoString()/MarshalJSON()/MarshalText()/LogValue() 都不得回傳原始值"
-  - "只有 Reveal() 能取得原始值"
-  - "建構子執行遮罩運算並快取結果，後續取值零額外成本"
-acceptance:
-  - "fmt.Sprintf('%v', masker.NewPhone('0987654321')) 回傳 '0987***321'"
-  - "fmt.Sprintf('%#v', masker.NewPhone('0987654321')) 不包含原始號碼"
-  - "json.Marshal 輸出遮罩值"
-  - "slog.Info 輸出遮罩值"
-  - "Reveal() 回傳原始值"
-  - "reflect.ValueOf(s).FieldByName('raw') 不可取值（unexported）"
-  - "NewSensitive 搭配自訂 maskFn 正確運作"
-  - "go test ./... 全部通過"
+    - Sensitive[T] 的 raw field 必須 unexported
+    - 任何 String()/GoString()/MarshalJSON()/MarshalText()/LogValue() 都不得回傳原始值
+    - 只有 Reveal() 能取得原始值
+    - 建構子執行遮罩運算並快取結果，後續取值零額外成本
+depends:
+    - F001-v3-core-interface
