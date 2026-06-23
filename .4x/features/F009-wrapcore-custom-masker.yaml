@@ -36,7 +36,7 @@ description: |
 
     - MaskerType zero value 時行為與現在相同（全遮罩）
     - 既有 API 不變
-status: in-progress
+status: ready-for-review
 priority: 2
 profile: quick
 subtasks:
