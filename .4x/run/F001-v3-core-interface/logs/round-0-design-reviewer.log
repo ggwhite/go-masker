@@ -1,0 +1,50 @@
+[assistant] 我先讀取必要的輸入檔案，並查看設計參考文件。
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/task-brief.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/acceptance-criteria.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/test-strategy.yaml
+[assistant] 讓我查看設計參考文件與現有 v2 程式碼，以驗證設計的完整性與正確性。
+[tool_use] Read: /Users/white/github/go-masker/docs/design/v3-design.md
+[tool_use] Bash: ls *.go && echo "---GENERIC---" && ls generic.go 2>/dev/null || echo "no generic.go in root" && echo "---ABUSE---" && he...
+[tool_use] Read: /Users/white/github/go-masker/generic.go
+[tool_use] Read: /Users/white/github/go-masker/mobile.go
+[tool_use] Read: /Users/white/github/go-masker/none.go
+[tool_use] Read: /Users/white/github/go-masker/masker.go
+[assistant] 我已充分掌握 v2 現況與 v3 設計。讓我快速確認 abuse masker 的 mask char 行為，以驗證一個跨參照疑點。
+[tool_use] Bash: grep -n "func.*Marshal\|maskChar\|strLoop\|overlay\|isEnd" abuse.go | head -30
+[assistant] 已掌握全部關鍵事實。現在撰寫 design review report。
+
+核心發現：
+- abuse.go:165 確認 `AbuseMasker.Marshal` 用 `maskChar` 遮罩命中詞，所以 task brief「abuse 遮罩字元見 Task 4」是個斷掉的交叉參照（Task 4 只講空字典回原值）。
+- AC-10 對 `Mask(t, value)` 未知 type 行為「回原值或空字串」二擇一未拍板——對遮罩函式庫而言「回原值」=洩漏，屬安全相關預設值。
+
+兩者皆為次要、AC 機制已強制以測試釘住，不阻擋開工。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/design-review-report.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/design-review-report.md
+[assistant] 我讀到一份先前 session 留下的 **FAIL** 報告。關鍵：那份報告的 4 點疑慮（最主要是 #1「`WithMaskChar` 對 URL masker 契約矛盾」），**Designer 已在當前的 task-brief / AC 中全數修正**：
+
+- task-brief 行 29–32 新增「`WithMaskChar` 例外」段，明列 URLMasker 固定 `xxxxx` 不受影響、NoneMasker 不適用、AbuseMasker 行為。
+- AC-4b 新增 URL `xxxxx` 例外斷言。
+- Task 2 行 34 明寫 instance-per-marshaler 不污染 default。
+- AC-9b 明確定義 abuse 空字典回原值。
+- AC-8 已改為精確的 `grep -rnE "MaskerType(None|Password|...)"`。
+
+舊 FAIL 報告已 stale、與當前 deliverables 不一致。我以當前輸入重新評估後覆寫。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/design-review-report.md
+[assistant] 設計審查完成，結論 **PASS**。已寫入 `design-review-report.md`。
+
+## 審查摘要
+
+**重點發現**：磁碟上原有一份前輪的 **FAIL** 報告，但其 4 點疑慮 Designer 已在當前的 task-brief / acceptance-criteria 中**全數修正**，該份報告已 stale，故依當前 deliverables 重新評估並覆寫。
+
+**前輪疑慮追蹤（均已修正）**
+- ✅ `WithMaskChar` 對 URL masker 的契約矛盾 → task-brief 行 29–32 新增「例外」段、AC-4b 新增 `xxxxx` 斷言
+- ✅ Abuse 空字典行為 → AC-9b 已定義
+- ✅ AC-8 grep 誤報 → 已改精確 regex
+- ✅ instance-per-marshaler 不污染 default → Task 2 行 34 已明文化
+
+**本輪殘留（次要、不阻擋開工，AC 已強制以測試釘住）**
+1. AC-10 未知 type 的 `Mask(t, value)` 行為「回原值/空字串」未拍板——對遮罩函式庫而言回原值=洩漏明文，**建議 coder 採 fail-safe 回 `""`**。
+2. task-brief 行 32 對 AbuseMasker mask char 的交叉參照不完整（Task 4 只講空字典）——經查 abuse.go:165，abuse 應比照他 masker 受 `WithMaskChar` 影響。
+
+架構（instance-per-marshaler、rune→string 轉換、generic dispatch、Struct 過渡）無阻擋風險；scope 紀律良好、無過度設計；AC-6 輸出已抽查與 v2 逐字一致。
+[result] success (225.2s, $1.2360)

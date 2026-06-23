@@ -1,0 +1,17 @@
+{
+  "featureId": "F002-sensitive-type",
+  "phase": "done",
+  "role": "",
+  "round": 1,
+  "maxRounds": 5,
+  "active": false,
+  "pid": 84320,
+  "runner": "claude",
+  "createdAt": "2026-06-23T15:34:02.188587+08:00",
+  "updatedAt": "2026-06-23T15:45:39.81195+08:00",
+  "since": "0001-01-01T00:00:00Z",
+  "consecutiveNoProgress": 0,
+  "lastFailCount": 0,
+  "stopReason": "done",
+  "profile": "full"
+}

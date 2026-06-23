@@ -221,143 +221,144 @@ func (m *MaskerMarshaler) Struct(s interface{}) (interface{}, error) {
 		selem = sv
 	}
 
-	for i := 0; i < selem.NumField(); i++ {
-		if !selem.Type().Field(i).IsExported() {
+	info := cachedTypeInfo(selem.Type())
+	for _, f := range info.fields {
+		if !f.exported {
 			continue
 		}
-		mtag := selem.Type().Field(i).Tag.Get(tagName)
-		if len(mtag) == 0 {
-			tptr.Elem().Field(i).Set(selem.Field(i))
+		sf := selem.Field(f.index)
+		dst := tptr.Elem().Field(f.index)
+		if !f.hasTag {
+			dst.Set(sf)
 			continue
 		}
 
-		switch selem.Field(i).Type().Kind() {
+		switch f.kind {
 		default:
-			tptr.Elem().Field(i).Set(selem.Field(i))
+			dst.Set(sf)
 		case reflect.String:
-			v, err := m.Marshal(MaskerType(mtag), selem.Field(i).String())
+			v, err := m.Marshal(f.tag, sf.String())
 			if err != nil {
 				return nil, err
 			}
-			tptr.Elem().Field(i).SetString(v)
+			dst.SetString(v)
 		case reflect.Struct:
-			if MaskerType(mtag) == MaskerTypeStruct {
-				_t, err := m.Struct(selem.Field(i).Interface())
+			if f.tag == MaskerTypeStruct {
+				_t, err := m.Struct(sf.Interface())
 				if err != nil {
 					return nil, err
 				}
-				tptr.Elem().Field(i).Set(reflect.ValueOf(_t).Elem())
+				dst.Set(reflect.ValueOf(_t).Elem())
 			} else {
-				tptr.Elem().Field(i).Set(selem.Field(i))
+				dst.Set(sf)
 			}
 		case reflect.Ptr:
-			if selem.Field(i).IsNil() {
+			if sf.IsNil() {
 				continue
 			}
-			if MaskerType(mtag) == MaskerTypeStruct {
-				_t, err := m.Struct(selem.Field(i).Interface())
+			if f.tag == MaskerTypeStruct {
+				_t, err := m.Struct(sf.Interface())
 				if err != nil {
 					return nil, err
 				}
-				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+				dst.Set(reflect.ValueOf(_t))
 			} else {
-				tptr.Elem().Field(i).Set(selem.Field(i))
+				dst.Set(sf)
 			}
 		case reflect.Map:
-			if selem.Field(i).IsNil() {
+			if sf.IsNil() {
 				continue
 			}
-			if MaskerType(mtag) != MaskerTypeMapStruct {
-				tptr.Elem().Field(i).Set(selem.Field(i))
+			if f.tag != MaskerTypeMapStruct {
+				dst.Set(sf)
 				continue
 			}
 
-			maskedMap := reflect.MakeMapWithSize(selem.Field(i).Type(), selem.Field(i).Len())
-			iter := selem.Field(i).MapRange()
+			maskedMap := reflect.MakeMapWithSize(sf.Type(), sf.Len())
+			iter := sf.MapRange()
 			for iter.Next() {
-				v := iter.Value()
-				maskedValue, err := m.maskMapStructValue(v)
+				maskedValue, err := m.maskMapStructValue(iter.Value())
 				if err != nil {
 					return nil, err
 				}
 
 				maskedMap.SetMapIndex(iter.Key(), maskedValue)
 			}
-			tptr.Elem().Field(i).Set(maskedMap)
+			dst.Set(maskedMap)
 			continue
 
 		case reflect.Slice:
-			if selem.Field(i).IsNil() {
+			if sf.IsNil() {
 				continue
 			}
 			switch {
-			case selem.Field(i).Type().Elem().Kind() == reflect.String:
-				orgval := selem.Field(i).Interface().([]string)
+			case f.elemKind == reflect.String:
+				orgval := sf.Interface().([]string)
 				newval := make([]string, len(orgval))
-				for i, val := range selem.Field(i).Interface().([]string) {
-					v, err := m.Marshal(MaskerType(mtag), val)
+				for i, val := range orgval {
+					v, err := m.Marshal(f.tag, val)
 					if err != nil {
 						return nil, err
 					}
 					newval[i] = v
 				}
-				tptr.Elem().Field(i).Set(reflect.ValueOf(newval))
-			case selem.Field(i).Type().Elem().Kind() == reflect.Struct && MaskerType(mtag) == MaskerTypeStruct:
-				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
-				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
-					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
+				dst.Set(reflect.ValueOf(newval))
+			case f.elemKind == reflect.Struct && f.tag == MaskerTypeStruct:
+				newval := reflect.MakeSlice(sf.Type(), 0, sf.Len())
+				for j, l := 0, sf.Len(); j < l; j++ {
+					_n, err := m.Struct(sf.Index(j).Interface())
 					if err != nil {
 						return nil, err
 					}
 					newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
 				}
-				tptr.Elem().Field(i).Set(newval)
-			case selem.Field(i).Type().Elem().Kind() == reflect.Ptr && MaskerType(mtag) == MaskerTypeStruct:
-				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
-				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
-					if selem.Field(i).Index(j).IsNil() {
-						newval = reflect.Append(newval, selem.Field(i).Index(j))
+				dst.Set(newval)
+			case f.elemKind == reflect.Ptr && f.tag == MaskerTypeStruct:
+				newval := reflect.MakeSlice(sf.Type(), 0, sf.Len())
+				for j, l := 0, sf.Len(); j < l; j++ {
+					if sf.Index(j).IsNil() {
+						newval = reflect.Append(newval, sf.Index(j))
 						continue
 					}
-					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
+					_n, err := m.Struct(sf.Index(j).Interface())
 					if err != nil {
 						return nil, err
 					}
 					newval = reflect.Append(newval, reflect.ValueOf(_n))
 				}
-				tptr.Elem().Field(i).Set(newval)
-			case selem.Field(i).Type().Elem().Kind() == reflect.Interface && MaskerType(mtag) == MaskerTypeStruct:
-				newval := reflect.MakeSlice(selem.Field(i).Type(), 0, selem.Field(i).Len())
-				for j, l := 0, selem.Field(i).Len(); j < l; j++ {
-					_n, err := m.Struct(selem.Field(i).Index(j).Interface())
+				dst.Set(newval)
+			case f.elemKind == reflect.Interface && f.tag == MaskerTypeStruct:
+				newval := reflect.MakeSlice(sf.Type(), 0, sf.Len())
+				for j, l := 0, sf.Len(); j < l; j++ {
+					_n, err := m.Struct(sf.Index(j).Interface())
 					if err != nil {
 						return nil, err
 					}
-					if reflect.TypeOf(selem.Field(i).Index(j).Interface()).Kind() != reflect.Ptr {
+					if reflect.TypeOf(sf.Index(j).Interface()).Kind() != reflect.Ptr {
 						newval = reflect.Append(newval, reflect.ValueOf(_n).Elem())
 					} else {
 						newval = reflect.Append(newval, reflect.ValueOf(_n))
 					}
 				}
-				tptr.Elem().Field(i).Set(newval)
+				dst.Set(newval)
 			default:
-				tptr.Elem().Field(i).Set(selem.Field(i))
+				dst.Set(sf)
 			}
 		case reflect.Interface:
-			if selem.Field(i).IsNil() {
+			if sf.IsNil() {
 				continue
 			}
-			if MaskerType(mtag) != MaskerTypeStruct {
+			if f.tag != MaskerTypeStruct {
 				continue
 			}
-			_t, err := m.Struct(selem.Field(i).Interface())
+			_t, err := m.Struct(sf.Interface())
 			if err != nil {
 				return nil, err
 			}
-			if reflect.TypeOf(selem.Field(i).Interface()).Kind() != reflect.Ptr {
-				tptr.Elem().Field(i).Set(reflect.ValueOf(_t).Elem())
+			if reflect.TypeOf(sf.Interface()).Kind() != reflect.Ptr {
+				dst.Set(reflect.ValueOf(_t).Elem())
 			} else {
-				tptr.Elem().Field(i).Set(reflect.ValueOf(_t))
+				dst.Set(reflect.ValueOf(_t))
 			}
 		}
 	}

@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "round": 1,
+  "role": "tester",
+  "commands": [
+    {
+      "command": "cd v3/zapfield \u0026\u0026 go build ./...",
+      "exitCode": 0,
+      "durationMs": 161,
+      "summary": "",
+      "startedAt": "2026-06-23T16:09:38.251922+08:00",
+      "finishedAt": "2026-06-23T16:09:38.413263+08:00",
+      "group": "default"
+    },
+    {
+      "command": "cd v3/zapfield \u0026\u0026 go vet ./...",
+      "exitCode": 0,
+      "durationMs": 114,
+      "summary": "",
+      "startedAt": "2026-06-23T16:09:38.413264+08:00",
+      "finishedAt": "2026-06-23T16:09:38.528107+08:00",
+      "group": "default"
+    },
+    {
+      "command": "cd v3/zapfield \u0026\u0026 go test -race -cover ./...",
+      "exitCode": 0,
+      "durationMs": 2307,
+      "summary": "ok  \tgithub.com/ggwhite/go-masker/v3/zapfield\t1.509s\tcoverage: 97.1% of statements",
+      "startedAt": "2026-06-23T16:09:38.528111+08:00",
+      "finishedAt": "2026-06-23T16:09:40.835249+08:00",
+      "group": "default"
+    }
+  ]
+}

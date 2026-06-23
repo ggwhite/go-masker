@@ -1,0 +1,16 @@
+{
+  "learnings": [
+    {
+      "category": "testing",
+      "content": "為 zapcore.Core wrapper 寫測試時，用 zaptest/observer 建可觀測 core 並逐一斷言 Write 與 With 兩條路徑，避免只測 Write 而漏掉 logger.With 累積的 context field。"
+    },
+    {
+      "category": "code-quality",
+      "content": "撰寫 doc／註解時，若專案有 CI grep 禁用 token（如 reflection 欄位建構子名稱），一律用語意描述而非逐字寫出該 token，並讓 masking 走 field.String 寫值繞開 reflection。"
+    },
+    {
+      "category": "design",
+      "content": "對 keyword/heuristic 類的被動防護機制，task-brief 應明確要求 GoDoc 同時標示 false positive 與 false negative 風險，並指出有顯式方案時本層為多餘，避免被誤當主力方案。"
+    }
+  ]
+}

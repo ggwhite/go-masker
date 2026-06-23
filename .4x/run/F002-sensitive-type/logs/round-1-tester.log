@@ -1,0 +1,42 @@
+[assistant] 我先讀取必要的輸入檔案，並建立 test-report.md。
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/acceptance-criteria.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/coder-report.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/test-strategy.yaml
+[tool_use] Bash: cat /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/test-report.md 2>/dev/null || echo "NOT_EXI...
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive.go
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive_constructors.go
+[assistant] 我先建立 test-report.md 框架，然後執行 verify。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/test-report.md
+[tool_use] Bash: which 4x && ${FOURX_BIN:-4x} verify F002-sensitive-type 2>&1 | tail -40
+[assistant] verify 通過。讀取 verify.json 與測試檔以收集各 AC 證據。
+[tool_use] Bash: cat /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/verify.json 2>/dev/null; echo "---TEST OUTP...
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive_test.go
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive_constructors_test.go
+[assistant] 所有證據已收集，verify.json `passed: true`，120 個測試全綠。更新 test-report.md 與 final-report.md。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/test-report.md
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/final-report.md
+[assistant] 測試完成。
+
+## 結果摘要
+
+**F002 Sensitive[T] 泛型安全型別 — PASS（17/17 AC 全數通過）**
+
+`4x verify` 三項指令全綠：
+- `gofmt -l` → 無輸出
+- `go vet ./...` → 無問題
+- `go test -race -cover ./...` → ok，coverage 65.9%，120 passed
+
+各 AC 證據已逐項記錄於 test-report.md，重點：
+
+- **安全核心**：`raw`/`masked`/`mask` 三 field 皆 unexported，`Reveal()` 是取得原值的唯一途徑（AC-1, AC-2）
+- **五條自動輸出路徑全遮罩**：`String`/`GoString`/`MarshalJSON`/`MarshalText`/`LogValue` 皆只回 masked，且有編譯期介面斷言（AC-3~AC-7, AC-14）；測試明確斷言輸出不含原值子字串
+- **九建構子 parity** 與 v3 函式逐字一致、NewPhone/NewTel 不混用（AC-8, AC-9）
+- **退化安全**：`mask==nil` 時 masked 為 `""`，安全路徑不洩漏 raw（AC-13）
+- `Equal` 只比 raw 不誤判、`UnmarshalJSON` 還原並重算 masked、自訂型別（int）遮罩皆有測試（AC-10~AC-12）
+
+已產出檔案：
+- `rounds/round-1/test-report.md`
+- `final-report.md`（verify 通過故必寫）
+
+無阻擋項，可進入 deep-review / accepting。
+[result] success (92.5s, $0.8133)

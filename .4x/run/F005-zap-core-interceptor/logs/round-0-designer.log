@@ -1,0 +1,35 @@
+[assistant] 我先檢查現有產出檔案、design review feedback，以及 F004 已建立的 zapfield 模組結構。
+[tool_use] Bash: ls -la .4x/run/F005-zap-core-interceptor/ 2>/dev/null && echo "---ZAPFIELD---" && ls -la zapfield/ 2>/dev/null && echo "...
+[tool_use] Bash: find . -path ./.git -prune -o -name '*.go' -print | grep -i zap; echo "---"; find . -name go.mod | grep -v '.git'; echo ...
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/go.mod
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/field.go
+[assistant] 我看到 `masker.All(value)` 已存在。feature 描述用 `masker.Mask("all", value)`，需確認 core 實際 API。
+[tool_use] Bash: cd v3 && grep -rn "^func Mask\b\|^func All\b\|^func Mask(" *.go | head; echo "---Mask sig---"; grep -rn "func Mask\|func...
+[tool_use] Read: /Users/white/github/go-masker/v3/convenience.go
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/field_test.go
+[assistant] 已掌握全部脈絡。v3/zapfield 是獨立 sub-module（已有 go.mod + replace），core 提供 `masker.All(value)` 與 `masker.Mask("all", value)`，測試慣例用 zapcore。zap 內建 `zaptest/observer` 可驗證 Core 輸出。開始增量寫入三份檔案。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F005-zap-core-interceptor/task-brief.md
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F005-zap-core-interceptor/acceptance-criteria.md
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F005-zap-core-interceptor/test-strategy.yaml
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F005-zap-core-interceptor/selected-learnings.json
+[assistant] 三份必要檔案 + selected-learnings 已寫入磁碟。
+
+## 設計摘要
+
+**F005 zap Core interceptor** — 在 `v3/zapfield` sub-module 新增 zap.Core wrapper，依 field name keyword/regex 自動遮罩 string field。
+
+關鍵設計決策：
+
+1. **API 對齊 feature 範例**：`WrapCore(core, rules)` 不回傳 error，故 `InterceptRules.Patterns` 用已編譯的 `[]*regexp.Regexp`（編譯責任交給呼叫端，保持 signature 乾淨）。
+2. **只動 string field**：唯有 `field.Type == zapcore.StringType` 且 key 命中時，才改 `field.String = masker.All(...)`；非 string field（整數等）一律原樣，避免誤殺——並用 `phone_count` 當測試案例驗證。
+3. **With + Write 雙路徑攔截**：context field（`logger.With`）也要遮罩，故 With 需重新包裝回傳 core。
+4. **誠實標示侷限**：GoDoc 明寫 false positive / false negative 風險，定位為「最後一道防線」非主力。
+5. **測試用 `zaptest/observer`**：可觀測輸出，涵蓋 keyword/regex/非 string/空 rules/case-insensitive/With 六類斷言。
+
+挑選的 learnings：
+- **L005** — 退化情況選最安全：空 rules → 原樣放行、不 panic。
+- **L007 / L009** — 避免 doc 逐字寫出 CI grep 的禁用 reflection token，遮罩一律經 `field.String`。
+- **L008** — 沿用獨立 sub-module go.mod，重量級 zap 依賴不污染 core。
+
+`coder_only` 流程，verify 走 `v3/zapfield` 內 build / vet / `go test -race -cover`。
+[result] success (151.6s, $0.9235)

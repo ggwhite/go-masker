@@ -1,0 +1,49 @@
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/acceptance-criteria.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/rounds/round-2/coder-report.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/test-strategy.yaml
+[tool_use] Bash: ls /Users/white/github/go-masker/.4x/run/F004-zapfield-module/rounds/round-2/ 2>/dev/null; echo "---FOURX---"; which 4x ...
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/rounds/round-2/verify.json
+[tool_use] Bash: echo "FOURX_BIN=$FOURX_BIN"; command -v 4x; ls -la /usr/local/bin/4x /opt/homebrew/bin/4x 2>/dev/null
+[assistant] Now let me re-run verify fresh and collect AC-specific evidence in parallel.
+[tool_use] Bash: 4x verify F004-zapfield-module 2>&1 | tail -20
+[assistant] All 6 verify commands passed. Now let me collect AC-specific evidence.
+[tool_use] Bash: cd /Users/white/github/go-masker
+echo "===== AC-1: zapfield go.mod ====="
+cat v3/zapfield/go.mod
+echo "===== AC-2: core ...
+[tool_use] Bash: cd /Users/white/github/go-masker
+echo "===== AC-5/7/8: test cases (verbose) ====="
+cd v3/zapfield && go test -race -v ./...
+[tool_use] Bash: go test -race -v ./... 2>&1 | tail -80
+[assistant] The output is rtk-filtered. Let me see raw test names and verify AC-7/8 assertions exist in the test file.
+[tool_use] Bash: cd /Users/white/github/go-masker/v3/zapfield
+echo "===== test functions ====="
+grep -oE "func (Test|Example)[A-Za-z_]*" ...
+[tool_use] Bash: cd /Users/white/github/go-masker
+echo "===== AC-10: GoDoc first-lines (繁中, name-first) ====="
+grep -B1 -E "^func [A-...
+[assistant] All evidence collected. All 11 AC items pass. Let me write the reports.
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/rounds/round-2/test-report.md
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/final-report.md
+[assistant] 測試完成。**PASS — 11/11 AC 全數通過**。
+
+## 摘要
+
+重跑 `4x verify F004-zapfield-module`，6 個 verify 指令全 exit 0，`verify.json` `passed: true`。逐項 AC 蒐證如下：
+
+| 重點 | 證據 |
+|---|---|
+| **依賴隔離**（AC-1/2） | `v3/zapfield/go.mod` 獨立 module + replace 指回 `../`；core `v3/go.mod` `grep -i zap` 無命中 |
+| **12 個 Field helper**（AC-4） | grep count = 12（Phone…All），全以 `zap.String` 建構，無 `zap.Any`/`zap.Reflect`（AC-6） |
+| **parity 逐字一致**（AC-5） | `TestFieldHelpers_DelegateToCore` table-driven 對照每個 core 函式 |
+| **Sensitive adapter**（AC-7/8） | 用快取 masked 值、zero-value 退化空字串、int 泛型輸出 `*****`、斷言 `!= Reveal()` 防洩漏 |
+| **race / vet / core 不變**（AC-9/10/11） | test -race 17 passed、`go vet` exit 0、`git status` core 無改動 |
+
+Round 1 唯一阻擋（AC-6 grep gate 對 `doc.go` 註解的字面誤判）已在 round 2 以單行註解改寫解除（commit `8349ed1`），語意不變、未動 helper 邏輯。
+
+已寫入：
+- `rounds/round-2/test-report.md`
+- `final-report.md`（verify passed → 必填）
+
+**Verdict: PASS**，feature 可接受。
+[result] success (124.3s, $0.8983)

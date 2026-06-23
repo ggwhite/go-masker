@@ -1,0 +1,31 @@
+[assistant] 我先看 diff、task-brief 與 coder-report，並檢查 review-report 是否已存在。
+[tool_use] Bash: git diff HEAD --stat && echo "===CACHED===" && git diff --cached --stat
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F005-zap-core-interceptor/task-brief.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F005-zap-core-interceptor/rounds/round-1/coder-report.md
+[tool_use] Bash: ls .4x/run/F005-zap-core-interceptor/rounds/round-1/ 2>/dev/null && echo "===" && cat .4x/run/F005-zap-core-interceptor/...
+[assistant] 變更已 commit（`0af6e97`），沒有 uncommitted diff。我直接看 commit 內容與檔案。
+[tool_use] Bash: git show 0af6e97 --stat
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/core.go
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/core_test.go
+[tool_use] Bash: cd v3 && grep -rn "func All" *.go | head; echo "==="; cd zapfield && go test ./... 2>&1 | tail -20
+[tool_use] Bash: cd v3/zapfield && grep -nE "zap\.Any|zap\.Reflect|AddReflected" core.go core_test.go; echo "exit=$?"; gofmt -l core.go c...
+[tool_use] Bash: grep -nE "zap\.Any|zap\.Reflect|AddReflected" core.go core_test.go; echo "grep_exit=$?"; gofmt -l core.go core_test.go; ...
+[assistant] 全部檢查通過。我寫入 review-report.md。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F005-zap-core-interceptor/rounds/round-1/review-report.md
+[assistant] Review 完成，已寫入 `review-report.md`。
+
+**Verdict：PASS**（零 critical、零 warning）
+
+重點確認：
+
+- **三條 feature 紅線全中**
+  - 只攔截 string field：`interceptFields` 以 `Type == zapcore.StringType` 守門，非 string 原樣保留（`core.go:104`）
+  - keyword 用 `strings.Contains` 且 case-insensitive：key 與 keyword 雙向 `ToLower`（`core.go:35-37`）
+  - doc 明確警告 false positive：`InterceptRules` 與 `WrapCore` GoDoc 皆有 ⚠️ 段，舉 `phone_count` 為誤遮例（`core.go:16-21, 66-68`）
+
+- **四項任務全到位**：`InterceptRules`+`match`（空/nil 退化為放行不 panic）、`maskingCore` 完整實作 `zapcore.Core`（`With` 路徑同樣攔截 context field）、GoDoc 第一句以識別字開頭且無 reflection 欄位建構子、observer-based 測試涵蓋 7 情境。
+
+- **實作細節無雷**：`interceptFields` 先 `make`+`copy` 建新 slice，且 `zapcore.Field` 為 value 型別，無就地改寫呼叫端 slice 的 aliasing 問題。
+
+- **驗證**：gofmt 乾淨、禁用 token（`zap.Any`/`zap.Reflect`/`AddReflected`）0 命中、`go test ./...` 24 passed。
+[result] success (67.6s, $0.6933)

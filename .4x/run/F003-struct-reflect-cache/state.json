@@ -1,0 +1,16 @@
+{
+  "featureId": "F003-struct-reflect-cache",
+  "phase": "coding",
+  "role": "coder",
+  "round": 1,
+  "maxRounds": 5,
+  "active": true,
+  "pid": 84320,
+  "runner": "claude",
+  "createdAt": "2026-06-23T16:12:39.488532+08:00",
+  "updatedAt": "2026-06-23T16:17:56.284758+08:00",
+  "since": "0001-01-01T00:00:00Z",
+  "consecutiveNoProgress": 0,
+  "lastFailCount": 0,
+  "profile": "full"
+}

@@ -1,0 +1,48 @@
+[assistant] 我先讀 task-brief 和檢查既有進度。
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/task-brief.md
+[tool_use] Bash: git log --oneline -20 && echo "=== DIFF ===" && git diff --stat
+[assistant] 沒有未提交變更。我來看 v3 既有的 package-level 函式與 module 設定。
+[tool_use] Bash: ls -la v3/ && echo "=== go.mod ===" && cat v3/go.mod && echo "=== convenience.go ===" && cat v3/convenience.go
+[assistant] package-level 函式齊全。現在撰寫實作。先寫 `v3/sensitive.go`。
+[tool_use] Write: /Users/white/github/go-masker/v3/sensitive.go
+[assistant] 我把自訂 alias 改成直接用標準 `encoding` 套件，較乾淨也符合 task brief 原意。
+[tool_use] Edit: /Users/white/github/go-masker/v3/sensitive.go
+[assistant] Now the constructors file:
+[tool_use] Write: /Users/white/github/go-masker/v3/sensitive_constructors.go
+[assistant] 先讀 acceptance-criteria 與 test-strategy 確認測試要求。
+[tool_use] Bash: cat .4x/run/F002-sensitive-type/acceptance-criteria.md 2>/dev/null; echo "=== TEST STRATEGY ==="; cat .4x/run/F002-sensi...
+[assistant] 測試需求清楚。撰寫兩個測試檔。
+[tool_use] Write: /Users/white/github/go-masker/v3/sensitive_test.go
+[tool_use] Write: /Users/white/github/go-masker/v3/sensitive_constructors_test.go
+[tool_use] Bash: cd v3 && gofmt -l sensitive.go sensitive_constructors.go sensitive_test.go sensitive_constructors_test.go; echo "gofmt-e...
+[assistant] gofmt 標出 `sensitive.go` 需要重新格式化（var 區塊對齊）。修正：
+[tool_use] Bash: cd v3 && gofmt -w sensitive.go && gofmt -l sensitive.go sensitive_constructors.go sensitive_test.go sensitive_constructo...
+[assistant] 工作目錄已在 v3。直接用絕對路徑跑：
+[tool_use] Bash: gofmt -w sensitive.go && gofmt -l sensitive.go sensitive_constructors.go sensitive_test.go sensitive_constructors_test.g...
+[assistant] 全部通過。提交並寫 coder-report。
+[tool_use] Bash: cd /Users/white/github/go-masker && git add v3/sensitive.go v3/sensitive_constructors.go v3/sensitive_test.go v3/sensiti...
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/coder-report.md
+[assistant] F002 Coder round 1 完成。
+
+## 摘要
+
+在 v3 module 新增 `Sensitive[T]` 泛型安全型別，遮罩從「記得做」變成「洩漏原值要刻意 `Reveal()`」。
+
+**新增檔案**
+- `v3/sensitive.go` — 核心 struct（`raw`/`masked`/`mask` 全 unexported）、`Reveal`、`NewSensitive`、五個安全輸出 interface（`String`/`GoString`/`MarshalJSON`/`MarshalText`/`LogValue`）、`Equal`、`UnmarshalJSON` + 編譯期介面斷言
+- `v3/sensitive_constructors.go` — 九個內建建構子（`NewPhone→Mobile`、`NewTel→Tel` 不混用）
+- `v3/sensitive_test.go`、`v3/sensitive_constructors_test.go` — 測試 + 可執行 example
+
+**設計重點**
+- 底層沿用 F001 v3 package-level 函式，未重寫遮罩邏輯 → masked 逐字一致
+- 五個輸出 interface 皆 value receiver、只回 `masked`，絕不碰 `raw`
+- `Equal` 用 `reflect.DeepEqual` 只比 `raw`（不因 masked 相同誤判）
+- `mask == nil` 退化情況 masked 設 `""`，安全不洩漏
+
+**驗證**（test-strategy 三條全綠）
+- `gofmt -l` → 無輸出
+- `go vet ./...` → No issues
+- `go test -race -cover ./...` → 120 passed
+
+已 commit（`b790bb8`）並寫入 coder-report.md。
+[result] success (185.2s, $1.2047)

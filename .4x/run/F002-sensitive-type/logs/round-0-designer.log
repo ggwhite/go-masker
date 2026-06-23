@@ -1,0 +1,34 @@
+[assistant] 我先了解專案現況，特別是 F001 建立的 v3 module，以及檢查是否有先前未完成的產出或 design review 回饋。
+[tool_use] Bash: ls -la && echo "---V3---" && ls -la v3/ 2>/dev/null && echo "---RUN---" && ls -la .4x/run/F002-sensitive-type/ 2>/dev/nu...
+[assistant] 沒有 design review report，從頭開始。我需要理解 v3 module 的 API（特別是 convenience.go 提供的短函式，建構子要基於它們），以及 go.mod 的 Go 版本（泛型需要 1.18+）。
+[tool_use] Read: /Users/white/github/go-masker/v3/convenience.go
+[tool_use] Bash: cat v3/go.mod && echo "---" && go version && echo "---masker.go head---" && sed -n '1,60p' v3/masker.go
+[assistant] 沒有 design review report，這是首次設計。我已掌握：v3 module 用 Go 1.21（泛型可用），package-level 短函式為 `Mobile/Email/Password/Name/Address/ID/Credit/Tel/URL`（建構子要包這些）。注意 feature 要 `NewPhone` 對應的是 `Mobile`(TypeMobile)。
+
+開始增量寫入 task-brief.md。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/task-brief.md
+[assistant] Task brief 完成。現在寫 acceptance-criteria.md。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/acceptance-criteria.md
+[assistant] 現在寫 test-strategy.yaml 與 selected-learnings.json。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/test-strategy.yaml
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/selected-learnings.json
+[assistant] 三份必要檔案 + selected-learnings 已全部寫入磁碟。設計完成。
+
+## 設計摘要 — F002 Sensitive[T] 泛型安全型別
+
+**核心契約**：所有「自動」輸出路徑（`fmt`、`%#v`、`json.Marshal`、`TextMarshaler`、`slog`）一律吐遮罩值；原值唯一出口是 `Reveal()`。
+
+**關鍵設計決策**（task-brief 已固化）：
+
+1. **struct 三欄位全 unexported**：`raw T` / `masked string` / `mask func(T) string`。多存 `mask` 是為了讓 `UnmarshalJSON` 能重算 masked（呼應 feature 的設計決策）。
+2. **建構子委派既有 v3 函式**：九個 `NewXxx` 全部包 F001 的 package-level 函式（`Mobile/Email/...`），不重寫遮罩邏輯 → masked 與既有 v3 行為逐字一致（採用 L001、L003：沿用既有 v3 測資當斷言）。
+3. **命名陷阱明列**：`NewPhone`→`Mobile`（手機）、`NewTel`→`Tel`（市話），AC-9 專門驗證不混用。
+4. **`Equal` 用 `reflect.DeepEqual(raw)`**：不限制 `T comparable`，且只比 raw 不比 masked（避免「不同 raw、相同遮罩」誤判，AC-11 驗證）。
+5. **`mask == nil` 退化情況**：安全預設 masked = `""`，絕不把 raw 當 masked 洩漏（AC-13）。這是我補的 edge case，feature 原文沒明寫但安全性必須涵蓋。
+
+**驗證**：`coder_only` + `unit` profile，三道 verify command（gofmt / go vet / `go test -race -cover`）。
+
+**Out of scope** 我特別釐清了：不碰 v2、不改 F001 既有檔、不做 struct tag 整合、不替動態型別（Abuse/None/All）出建構子。
+
+唯一需提醒：feature 規格沒提 `mask==nil` 行為，我以「安全優先 → 空字串」定調（AC-13）。若你期望別的退化行為（如 panic 或保留原值），請告知，否則 Design Reviewer 會以此版審。
+[result] success (163.3s, $0.9462)

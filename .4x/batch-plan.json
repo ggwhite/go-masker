@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-06-23T07:08:15.971986Z",
+  "clusters": [
+    {
+      "id": "cluster-0",
+      "features": [
+        "F001-v3-core-interface",
+        "F002-sensitive-type",
+        "F003-struct-reflect-cache",
+        "F004-zapfield-module",
+        "F005-zap-core-interceptor"
+      ],
+      "chains": [
+        [
+          "F001-v3-core-interface",
+          "F002-sensitive-type",
+          "F004-zapfield-module",
+          "F005-zap-core-interceptor"
+        ],
+        [
+          "F003-struct-reflect-cache"
+        ]
+      ]
+    }
+  ],
+  "schedule": [
+    {
+      "featureId": "F001-v3-core-interface",
+      "slot": 0,
+      "canStartAfter": []
+    },
+    {
+      "featureId": "F002-sensitive-type",
+      "slot": 0,
+      "canStartAfter": [
+        "F001-v3-core-interface"
+      ]
+    },
+    {
+      "featureId": "F004-zapfield-module",
+      "slot": 0,
+      "canStartAfter": [
+        "F002-sensitive-type",
+        "F001-v3-core-interface"
+      ]
+    },
+    {
+      "featureId": "F005-zap-core-interceptor",
+      "slot": 0,
+      "canStartAfter": [
+        "F004-zapfield-module"
+      ]
+    },
+    {
+      "featureId": "F003-struct-reflect-cache",
+      "slot": 0,
+      "canStartAfter": [
+        "F001-v3-core-interface"
+      ]
+    }
+  ]
+}

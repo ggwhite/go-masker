@@ -1,0 +1,9 @@
+web: false
+api: false
+coder_only: true
+profiles:
+  - unit
+verify_commands:
+  - "cd v3 && gofmt -l sensitive.go sensitive_constructors.go sensitive_test.go sensitive_constructors_test.go"
+  - "cd v3 && go vet ./..."
+  - "cd v3 && go test -race -cover ./..."

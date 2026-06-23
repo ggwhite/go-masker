@@ -1,0 +1,32 @@
+[tool_use] Bash: git diff HEAD --stat && echo "===CACHED===" && git diff --cached --stat
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/task-brief.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/coder-report.md
+[assistant] The diff is committed. Let me read the actual source files and check the existing report.
+[tool_use] Bash: ls .4x/run/F002-sensitive-type/rounds/round-1/ && echo "===" && git show --stat HEAD | head -30
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive.go
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive_constructors.go
+[assistant] No existing review-report. Let me read the tests, AC, and verify the v3 package-level functions exist with correct signatures.
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive_test.go
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive_constructors_test.go
+[tool_use] Bash: cd v3 && grep -n "^func \(Mobile\|Email\|Password\|Name\|Address\|ID\|Credit\|Tel\|URL\)" *.go 2>/dev/null | grep -v _te...
+[assistant] All v3 functions exist with matching signatures. Now let me run the verification commands and check the AC file.
+[tool_use] Bash: cd v3 && gofmt -l sensitive.go sensitive_constructors.go sensitive_test.go sensitive_constructors_test.go; echo "---vet-...
+[tool_use] Bash: cat .4x/run/F002-sensitive-type/acceptance-criteria.md 2>/dev/null | head -80
+[tool_use] Bash: gofmt -l sensitive.go sensitive_constructors.go sensitive_test.go sensitive_constructors_test.go && echo "gofmt-clean"; ...
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/acceptance-criteria.md
+[assistant] 全部驗證通過。我交叉核對了 AC-1～AC-17、四條 feature 規則與實作，並實跑了 gofmt/vet/test。寫入報告。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F002-sensitive-type/rounds/round-1/review-report.md
+[assistant] Review 完成，判定 **PASS**。
+
+## 結論
+
+F002 `Sensitive[T]` 泛型安全型別 round 1 通過審查，零 critical、零 warning。
+
+**驗證重點：**
+- 四條 feature 紅線全守住 — `raw`/`masked`/`mask` 三 field 皆 unexported；五個自動輸出路徑（`String`/`GoString`/`MarshalJSON`/`MarshalText`/`LogValue`）一律只讀 `s.masked`，唯一原值出口是 `Reveal()`；建構時算好並快取，後續取值零成本。
+- AC-1～AC-17 全數覆蓋，含 nil mask 退化、Phone vs Tel 不混用、masked 相同但 raw 不同的 `Equal` 邊界。
+- 實跑驗證：`gofmt -l` 無輸出、`go vet` 無 issue、`go test -race -cover` 全綠（120 passed）。
+- Scope 乾淨：僅新增 4 個檔，遮罩邏輯全部委派 F001 v3 package-level 函式，未動 v2 與既有 v3 檔。
+
+報告已寫入 `.4x/run/F002-sensitive-type/rounds/round-1/review-report.md`。
+[result] success (104.2s, $0.8338)

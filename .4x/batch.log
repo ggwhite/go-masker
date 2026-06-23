@@ -1,0 +1,55 @@
+══════════════════════════════════════
+  BATCH: F001-v3-core-interface (0/5 done)
+══════════════════════════════════════
+[round 0] designing (designer) — invoking claude (model: opus)
+[round 0] design-reviewing (design-reviewer) — invoking claude (model: opus)
+[round 0] designing (designer) — invoking claude (model: opus)
+[round 0] design-reviewing (design-reviewer) — invoking claude (model: opus)
+[round 1] coding (coder) — invoking claude (model: opus)
+[round 1] reviewing (reviewer) — invoking claude (model: opus)
+[round 1] testing (tester) — invoking claude (model: opus)
+[round 1] deep-reviewing — skipped (no deep_model configured)
+[round 1] accepting (acceptor) — invoking claude (model: opus)
+Feature F001-v3-core-interface ready for review (1 rounds). Run '4x done F001-v3-core-interface' to complete.
+══════════════════════════════════════
+  BATCH: F002-sensitive-type (1/5 done)
+══════════════════════════════════════
+[round 0] designing (designer) — invoking claude (model: opus)
+[round 0] design-reviewing (design-reviewer) — invoking claude (model: opus)
+[round 1] coding (coder) — invoking claude (model: opus)
+[round 1] reviewing (reviewer) — invoking claude (model: opus)
+[round 1] testing (tester) — invoking claude (model: opus)
+[round 1] deep-reviewing — skipped (no deep_model configured)
+[round 1] accepting (acceptor) — invoking claude (model: opus)
+Feature F002-sensitive-type ready for review (1 rounds). Run '4x done F002-sensitive-type' to complete.
+══════════════════════════════════════
+  BATCH: F004-zapfield-module (2/5 done)
+══════════════════════════════════════
+[round 0] designing (designer) — invoking claude (model: opus)
+[round 0] design-reviewing (design-reviewer) — invoking claude (model: opus)
+[round 1] coding (coder) — invoking claude (model: opus)
+[round 1] reviewing (reviewer) — invoking claude (model: opus)
+[round 1] testing (tester) — invoking claude (model: opus)
+[round 2] amending (coder) — invoking claude (model: opus)
+[round 2] reviewing (reviewer) — invoking claude (model: opus)
+[round 2] testing (tester) — invoking claude (model: opus)
+[round 2] deep-reviewing — skipped (no deep_model configured)
+[round 2] accepting (acceptor) — invoking claude (model: opus)
+Feature F004-zapfield-module ready for review (2 rounds). Run '4x done F004-zapfield-module' to complete.
+══════════════════════════════════════
+  BATCH: F005-zap-core-interceptor (3/5 done)
+══════════════════════════════════════
+[round 0] designing (designer) — invoking claude (model: opus)
+[round 0] design-reviewing (design-reviewer) — invoking claude (model: opus)
+[round 1] coding (coder) — invoking claude (model: opus)
+[round 1] reviewing (reviewer) — invoking claude (model: opus)
+[round 1] testing (tester) — invoking claude (model: opus)
+[round 1] deep-reviewing — skipped (no deep_model configured)
+[round 1] accepting (acceptor) — invoking claude (model: opus)
+Feature F005-zap-core-interceptor ready for review (1 rounds). Run '4x done F005-zap-core-interceptor' to complete.
+══════════════════════════════════════
+  BATCH: F003-struct-reflect-cache (4/5 done)
+══════════════════════════════════════
+[round 0] designing (designer) — invoking claude (model: opus)
+[round 0] design-reviewing (design-reviewer) — invoking claude (model: opus)
+[round 1] coding (coder) — invoking claude (model: opus)

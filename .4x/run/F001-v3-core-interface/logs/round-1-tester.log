@@ -1,0 +1,75 @@
+[assistant] 我是 F001-v3-core-interface 的 Tester，round 1。先讀取必要的輸入檔案。
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/acceptance-criteria.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/coder-report.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/test-strategy.yaml
+[assistant] 先檢查 test-report.md 是否已存在（resume 判斷），並確認 4x 指令位置。
+[tool_use] Bash: ls -la /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/ 2>&1; echo "---FOURX---"; echo "FOUR...
+[assistant] test-report.md 尚未存在，全新開始。先建立含表頭的初始報告，然後跑 verify。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/test-report.md
+[assistant] 執行 `4x verify`。
+[tool_use] Bash: "$FOURX_BIN" verify F001-v3-core-interface 2>&1 | tail -40
+[assistant] verify PASSED。讀取 verify.json。
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/verify.json
+[assistant] verify PASS。現在為每個 AC 蒐集具體證據。執行各項驗證指令。
+[tool_use] Bash: cd /Users/white/github/go-masker
+echo "=== AC-1 go.mod ==="; cat v3/go.mod
+echo "=== AC-2 require ==="; grep -c "require...
+[tool_use] Bash: cd /Users/white/github/go-masker/v3
+echo "=== AC-13 race test verbose (test names) ==="
+go test -race -v ./... 2>&1 | gr...
+[assistant] 32 個 top-level test 全 PASS，0 FAIL。列出測試函式名確認各 AC 有對應測試覆蓋。
+[tool_use] Bash: cd /Users/white/github/go-masker/v3
+echo "=== 測試函式清單 ==="; grep -rhn "^func Test" *_test.go | sed 's/(t \*te...
+[assistant] 各 AC 都有對應測試。執行針對性測試取得證據，並檢查 AC-14 GoDoc 與 AC-15 CI。
+[tool_use] Bash: cd /Users/white/github/go-masker/v3
+echo "=== AC-4/4b/6/7/9b/10/11/12 針對性測試 ==="
+go test -v -run 'TestWithMask...
+[assistant] 檢查 AC-6 斷言內容、AC-4 隔離斷言、AC-10 未知型別行為、AC-14 GoDoc、AC-15 CI。
+[tool_use] Bash: cd /Users/white/github/go-masker/v3
+echo "=== AC-6 v2 逐字斷言（抽查）==="
+grep -h '"' mobile_test.go email_test...
+[assistant] 檢查 AC-14（GoDoc 繁中、名稱開頭）與 AC-15（CI workflow）。
+[tool_use] Bash: cd /Users/white/github/go-masker
+echo "=== AC-14 exported GoDoc 抽查（masker.go 主要型別/函式）==="
+grep -B1 -...
+[assistant] 確認 exported 函式 GoDoc 第一句以名稱開頭。
+[tool_use] Bash: cd /Users/white/github/go-masker/v3
+echo "=== exported func/type GoDoc 第一行 ==="
+grep -rhn -B1 -E "^func (NewMasker...
+[tool_use] Bash: cd /Users/white/github/go-masker/v3
+for fn in NewMaskerMarshaler WithMaskChar; do grep -B1 "^func $fn(" masker.go | head...
+[assistant] `grep -B1` 只抓到緊鄰的範例行，GoDoc 是多行區塊。讀完整區塊確認第一句。
+[tool_use] Bash: cd /Users/white/github/go-masker/v3
+echo "=== NewMaskerMarshaler 完整 GoDoc ==="; grep -B6 "^func NewMaskerMarshaler("...
+[tool_use] Bash: cd /Users/white/github/go-masker/v3; grep -B8 "^func Mask(" convenience.go | head -3
+[assistant] 全部 16 項 AC 都已蒐集到證據且通過。更新 test-report.md。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/test-report.md
+[assistant] verify.json passed=true，撰寫 final-report.md。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/final-report.md
+[assistant] 測試完成。
+
+## 結果：PASS — 16/16 AC 全數達標
+
+**F001-v3-core-interface** round 1 一次通過。
+
+`4x verify` 三項指令全綠：
+- `go build ./...` → exit 0
+- `go vet ./...` → No issues found
+- `go test -race -cover ./...` → PASS，coverage 63.9%，race detector 乾淨（32 top-level / 91 含子測試，0 FAIL）
+
+每個 AC 都有具體證據（grep 結果或對應測試的 PASS）：
+- **AC-3/4/4b**：interface 改為 `Mask(value string) string`，`WithMaskChar` 生效且不污染 default、URL/None 例外
+- **AC-6**：遮罩輸出與 v2 逐字一致（`ggw****@gmail.com`、`(02)2799-****` 等測資斷言）
+- **AC-8**：`MaskerType` 精簡為 `TypeXxx`，舊 `MaskerTypeXxx` grep 無命中
+- **AC-11**：`MustMarshal` 未知型別 panic（recover 驗證）
+- **AC-14**：exported GoDoc 抽查皆繁中且以名稱開頭，`go vet` 通過
+- **AC-15**：`.github/workflows/go.yml` 含 `build-v3` job
+
+四條 Rules 全部符合。
+
+**已寫入檔案：**
+- `rounds/round-1/test-report.md`
+- `final-report.md`
+
+唯一備註：coverage 63.9%，未覆蓋的是 `Struct()` 的 slice/map/ptr reflect 容器分支——coder 標註屬獨立 feature（reflect cache）的 out-of-scope，不影響本 feature AC 達標。建議進入 deep-reviewing / accepting。
+[result] success (191.5s, $1.2212)

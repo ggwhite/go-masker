@@ -1,0 +1,18 @@
+{
+  "createdAt": "2026-06-23T15:37:57.193816+08:00",
+  "repos": [
+    {
+      "name": ".",
+      "path": ".",
+      "branch": "master",
+      "head": "b40872eb60e3ab3d471bfb65ac559dd47e856167",
+      "dirtyFiles": [
+        "?? .4x/batch-pid",
+        "?? .4x/batch-plan.json",
+        "?? .4x/batch.log",
+        "?? .4x/learnings.json",
+        "?? .4x/run/"
+      ]
+    }
+  ]
+}

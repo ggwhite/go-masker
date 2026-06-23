@@ -1,0 +1,35 @@
+[assistant] 我先讀取 inputs 並查看 diff。
+[tool_use] Bash: git diff HEAD --stat && echo "===CACHED===" && git diff --cached --stat
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/task-brief.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/coder-report.md
+[assistant] diff 為空，因為變更已 commit。我查看 F001 相關的兩個 commit 內容。
+[tool_use] Bash: git show 876a070 --stat | head -5; echo "=== v3 files ==="; git diff 876a070 HEAD --stat
+[tool_use] Read: /Users/white/github/go-masker/v3/masker.go
+[assistant] 先建立 review-report.md 骨架，然後讀取各 masker 實作並與 v2 比對。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/review-report.md
+[tool_use] Bash: for f in mobile email password name address id credit telephone url none generic; do echo "===== v3/$f.go ====="; cat v3...
+[assistant] 現在與 v2 原版比對遮罩邏輯。讓我讀 v2 對應實作。
+[tool_use] Bash: for f in mobile email password name address id credit telephone url none; do echo "===== v2/$f.go ====="; sed -n '/func....
+[tool_use] Bash: echo "=== v2 generic.go ==="; cat generic.go 2>/dev/null | sed -n '/func/,/^}/p' | head -80; echo "=== v3 go.mod ==="; c...
+[assistant] v2 與 v3 遮罩邏輯逐字一致。現在跑測試驗證並檢查 abuse 的 Mask 方法。
+[tool_use] Bash: cd v3 && go build ./... 2>&1 && echo "BUILD OK" && go vet ./... 2>&1 && echo "VET OK" && go test ./... 2>&1 | tail -5; e...
+[tool_use] Bash: echo "=== v2 abuse Mask/Marshal ==="; sed -n '/func.*AbuseMasker.*\(Mask\|Marshal\)/,/^}/p' abuse.go | head -45; echo "=...
+[tool_use] Bash: cd /Users/white/github/go-masker && echo "=== v2 abuse Mask method ==="; sed -n '/func (m \*AbuseMasker)/,/^}/p' abuse.g...
+[assistant] v2/v3 abuse 邏輯一致，所有 exported 函式皆有 GoDoc。最後確認 WithMaskChar 隔離與 URL/None 例外的測試存在。
+[tool_use] Bash: grep -ln "WithMaskChar" *_test.go && echo "---isolation/exception assertions---" && grep -n "WithMaskChar\|xxxxx\|Defaul...
+[assistant] 全部檢查通過。完成 review-report.md。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F001-v3-core-interface/rounds/round-1/review-report.md
+[assistant] Review 完成，已寫入 `review-report.md`。
+
+## 結論：PASS ✅
+
+逐項驗證結果：
+
+- **遮罩邏輯不變**（R1）：把 v3 的 mobile/email/password/name/address/id/credit/tel/url/none/all/abuse 與 `parseGenericMask` 全部與 v2 原版逐字比對，演算法完全一致，唯一差異就是把 `Marshal(s, i string)` 的 `s`（mask char）參數改成建構時注入的 `m.mask` 欄位 —— 正是 task 要求的「只改 API 形狀」。
+- **零外部依賴**（R2）：`v3/go.mod` 無 require、無 go.sum，只用 stdlib。
+- **GoDoc 完整**（R3）：掃描全部非 test 檔，無 exported func/type 缺註解，皆繁中、名稱開頭、多附 Example。
+- **WithMaskChar 隔離與例外**（R6）：每個 marshaler 各自建立獨立 masker 實例不污染 default；URL（固定 `xxxxx`）/ None 例外都有對應測試 `TestWithMaskChar` / `TestWithMaskChar_URLAndNoneException`。
+- **編譯/vet/test**（R9）：`go build`、`go vet` 乾淨，`go test ./...` 95 測試全綠。
+
+零 critical、零 warning。唯一備註（非阻擋）是 coverage 63.9%，未覆蓋的是 `Struct()` reflect 容器分支，那屬獨立 feature（out of scope），不構成問題。
+[result] success (115.8s, $1.0498)

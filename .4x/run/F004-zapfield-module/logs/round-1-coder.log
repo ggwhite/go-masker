@@ -1,0 +1,44 @@
+[assistant] 我先讀 task brief 和檢查目前進度。
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/task-brief.md
+[tool_use] Bash: git log --oneline -20 && echo "=== DIFF ===" && git diff --stat && echo "=== STATUS ===" && git status --short
+[assistant] 先看 v3 core 的結構與可用函式。
+[tool_use] Bash: echo "=== v3 dir ===" && ls -la v3/ && echo "=== v3/go.mod ===" && cat v3/go.mod
+[tool_use] Read: /Users/white/github/go-masker/v3/convenience.go
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive.go
+[tool_use] Read: /Users/white/github/go-masker/v3/sensitive_constructors.go
+[tool_use] Bash: ls "$(go env GOMODCACHE)/go.uber.org/" 2>/dev/null | grep -i zap; echo "---"; ls "$(go env GOMODCACHE)/go.uber.org/zap@v...
+[assistant] 資料齊全，開始建立 zapfield module。先建目錄與 go.mod、doc.go。
+[tool_use] Write: /Users/white/github/go-masker/v3/zapfield/go.mod
+[tool_use] Write: /Users/white/github/go-masker/v3/zapfield/doc.go
+[assistant] Now field.go：
+[tool_use] Write: /Users/white/github/go-masker/v3/zapfield/field.go
+[tool_use] Write: /Users/white/github/go-masker/v3/zapfield/sensitive.go
+[assistant] Now run go mod tidy to generate go.sum, then build:
+[tool_use] Bash: cd /Users/white/github/go-masker/v3/zapfield && go mod tidy 2>&1 && echo "=== BUILD ===" && go build ./... 2>&1 && echo ...
+[assistant] Build 成功。現在寫測試。先看一個 core 測試的風格參考：
+[tool_use] Read: /Users/white/github/go-masker/v3/mobile_test.go
+[tool_use] Write: /Users/white/github/go-masker/v3/zapfield/field_test.go
+[tool_use] Write: /Users/white/github/go-masker/v3/zapfield/sensitive_test.go
+[tool_use] Bash: go vet ./... 2>&1 && echo "=== TEST ===" && go test -race -cover ./... 2>&1
+[assistant] 全部通過。確認 v3 core 未被污染並 commit：
+[tool_use] Bash: cd /Users/white/github/go-masker && grep -i zap v3/go.mod && echo "WARN: core 含 zap" || echo "OK: v3 core go.mod 不�...
+[assistant] Now write the coder-report:
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/rounds/round-1/coder-report.md
+[assistant] F004 完成。
+
+## 摘要
+
+建立了獨立 sub-module `github.com/ggwhite/go-masker/v3/zapfield`，完成三項 task：
+
+| 檔案 | 內容 |
+|---|---|
+| `go.mod` / `go.sum` | 隔離 zap 依賴，`replace => ../` 指回 core |
+| `doc.go` | package doc + 依賴隔離設計說明 |
+| `field.go` | 12 個 masker type 的 `zap.Field` helper（`Phone`/`Email`/…/`All`） |
+| `sensitive.go` | 泛型 `Sensitive[T]` adapter |
+| `*_test.go` | 委派/逐字一致/型別/zero-value 退化測試 |
+
+**設計不變式全數遵守**：一律 `zap.String` 建構（非 `Any`/`Reflect`，測試以 `StringType` 鎖住）、遮罩委派 core（測試比對 `== zap.String(key, masker.X(...))` 證逐字一致）、adapter 只讀 `.String()` 不碰 raw、zero-value 安全退化為空字串。
+
+**驗證**：`go build` ✅、`go vet` 無問題、`go test -race -cover` 17 passed、`v3/go.mod` 不含 zap（core 未污染）。已 commit（`9b9fd8e`），coder-report.md 已寫入。
+[result] success (165.8s, $1.0490)

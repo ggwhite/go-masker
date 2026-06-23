@@ -1,0 +1,36 @@
+[assistant] 我來進行 F004 zapfield 子模組的 review。先收集輸入資料。
+[tool_use] Bash: git diff HEAD --stat && echo "---UNTRACKED---" && git status --porcelain
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/task-brief.md
+[tool_use] Read: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/rounds/round-1/coder-report.md
+[assistant] git status 沒顯示 `v3/zapfield/` 檔案，需確認檔案是否實際存在。
+[tool_use] Bash: ls -la v3/zapfield/ 2>&1; echo "---v3 root---"; ls v3/ 2>&1; echo "---git ls-files v3---"; git ls-files v3/ | head -50
+[assistant] 檔案已 commit（出現在 git ls-files），所以 `git diff HEAD` 為空。我來讀取所有 zapfield 檔案進行 review，同時確認核心不變式。
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/go.mod
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/field.go
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/sensitive.go
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/doc.go
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/field_test.go
+[tool_use] Read: /Users/white/github/go-masker/v3/zapfield/sensitive_test.go
+[tool_use] Read: /Users/white/github/go-masker/v3/go.mod
+[assistant] 程式碼乾淨。我來實際驗證：核心函式是否存在、測試是否通過、core 是否真的沒被 zap 污染。
+[tool_use] Bash: cd v3/zapfield && go build ./... 2>&1 && echo "BUILD_OK" && go vet ./... 2>&1 && echo "VET_OK" && go test -race -cover ....
+[tool_use] Bash: cd v3 && grep -rn "zap" go.mod go.sum 2>&1; echo "---core has no zap (empty above = good)---"; echo "=== package-level f...
+[assistant] shell 殘留在 zapfield 目錄，grep 跑錯地方了。用絕對路徑重查 core 的委派函式（特別是 Mobile / NewPhone / NewSensitive）。
+[tool_use] Bash: grep -rhoE "^func (Mobile|NewPhone|NewSensitive|All|None|Abuse)\b" /Users/white/github/go-masker/v3/*.go | sort -u; echo...
+[assistant] 全部驗證通過。所有委派函式存在、測試 17 passed、build/vet 乾淨、core 無 zap 污染、不變式全數遵守。撰寫 review report。
+[tool_use] Write: /Users/white/github/go-masker/.4x/run/F004-zapfield-module/rounds/round-1/review-report.md
+[assistant] Review 完成，結果 **PASS**。
+
+## 摘要
+
+F004 zapfield sub-module（round 1）通過審查，零 critical／warning issue。
+
+**驗證重點：**
+- **依賴隔離** ✅ — `v3/zapfield/go.mod` 為獨立 module，`replace => ../` 指回 core；`v3/go.mod`／`go.sum` grep zap 無輸出，core 未被污染。
+- **核心不變式** ✅ — 12 個 Field helper 與 `Sensitive[T]` adapter 一律以 `zap.String` 建構（非 `zap.Any`／`zap.Reflect`），測試以 `field.Type == zapcore.StringType` + 逐字比對 `== zap.String(key, masker.X(value))` 雙重鎖住。
+- **委派完整性** ✅ — 12 個委派函式（Mobile/Email/.../All）皆存在於 core；Sensitive adapter 僅讀 `.String()`，未碰 `Reveal()`／raw，zero-value 安全退化為空字串。
+- **品質** ✅ — GoDoc 繁中、第一句以函式名開頭、附 Example；`go build`／`go vet` 乾淨，`go test -race -cover` 17 passed。
+- **Out of Scope** ✅ — 未實作 Mask 動態型別 helper、未做 Core wrapper、未改 core 檔案。
+
+報告已寫入 `.4x/run/F004-zapfield-module/rounds/round-1/review-report.md`。
+[result] success (99.3s, $0.7388)
