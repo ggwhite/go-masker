@@ -1,4 +1,4 @@
-module github.com/ggwhite/go-masker/v3/ginmasker
+module github.com/ggwhite/go-masker/ginmasker
 
 go 1.22
 

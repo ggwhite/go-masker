@@ -47,7 +47,7 @@ go-masker/v3/                  ← core module（零外部依賴）
 ├── <type>.go                  ← 各類型 masker（mobile, email, password...）
 ├── go.mod
 │
-go-masker/v3/zapfield/         ← 獨立 module（依賴 zap）
+go-masker/zapfield/            ← 獨立 module（依賴 zap）
 ├── field.go                   ← zap Field helpers + Sensitive[T] adapter
 ├── interceptor.go             ← zap Core wrapper（P2）
 ├── go.mod                     ← depends on go-masker/v3 + go.uber.org/zap
@@ -179,7 +179,7 @@ func (m *MaskerMarshaler) Format(s any) string
 ### 5. zapfield Sub-module
 
 ```go
-import "github.com/ggwhite/go-masker/v3/zapfield"
+import "github.com/ggwhite/go-masker/zapfield"
 
 // Field helpers — 遮罩後包成 zap.Field
 zapfield.Phone("phone", "0987654321")         // zap.String("phone", "0987***321")

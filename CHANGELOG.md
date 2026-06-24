@@ -11,10 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Features
 
-- **slogfield sub-module** — `github.com/ggwhite/go-masker/v3/slogfield`，提供 `slog.Attr` helper 函式（Phone、Email、Name 等），與 zapfield 對等的 slog 版本
+- **slogfield sub-module** — `github.com/ggwhite/go-masker/slogfield`，提供 `slog.Attr` helper 函式（Phone、Email、Name 等），與 zapfield 對等的 slog 版本
 - **WrapCore 自訂 masker type** — `zapfield.Rule` 新增 `MaskerType` 欄位，攔截時可指定遮罩型別（如 `TypeMobile`），不再只能全遮罩；zero value 維持向後相容
 - **Sensitive[T] SQL Scanner/Valuer** — 實作 `sql.Scanner` + `driver.Valuer`，ORM model 敏感欄位可直接宣告為 `Sensitive[string]`，DB 讀寫自動處理
-- **ginmasker sub-module** — `github.com/ggwhite/go-masker/v3/ginmasker`，Gin middleware 自動遮罩 access log 中的 request/response body、query、header 敏感欄位
+- **ginmasker sub-module** — `github.com/ggwhite/go-masker/ginmasker`，Gin middleware 自動遮罩 access log 中的 request/response body、query、header 敏感欄位
 - **Sensitive[T] Redact 模式** — `WithRedact()` 建構選項，輸出 `[REDACTED]` 取代部分遮罩，適用於合規場景與對外 API response
 
 ### Internal
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Functional options** — `NewMaskerMarshaler(WithMaskChar("#"))` 取代 `SetMasker()`
 - **Package-level 便利函式** — `masker.Mobile()`、`masker.Email()` 等，免建 marshaler 直接遮罩
 - **Sensitive[T] 泛型安全型別** — 把遮罩從「開發者記得做」變成「洩漏要刻意寫 `.Reveal()`」，自動安全輸出至 fmt/json/slog
-- **zapfield sub-module** — `github.com/ggwhite/go-masker/v3/zapfield`，提供 zap Field helpers 與 `Sensitive[T]` adapter
+- **zapfield sub-module** — `github.com/ggwhite/go-masker/zapfield`，提供 zap Field helpers 與 `Sensitive[T]` adapter
 - **zap Core interceptor** — `WrapCore` 以 keyword/regex 攔截 log field 的最後一道防線
 
 ### Fixes

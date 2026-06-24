@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	masker "github.com/ggwhite/go-masker/v3"
-	"github.com/ggwhite/go-masker/v3/slogfield"
+	"github.com/ggwhite/go-masker/slogfield"
 )
 
 // 為求 Output 可決定性，example 不接真實 logger（時間戳不固定），改印 Key 與 Value。

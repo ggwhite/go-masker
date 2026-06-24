@@ -1,4 +1,4 @@
-module github.com/ggwhite/go-masker/v3/zapfield
+module github.com/ggwhite/go-masker/zapfield
 
 go 1.22
 

@@ -328,11 +328,11 @@ Optional sub-modules for integrating masking into your logging and HTTP stack. E
 ### zapfield — Zap Logger Integration
 
 ```bash
-go get github.com/ggwhite/go-masker/v3/zapfield
+go get github.com/ggwhite/go-masker/zapfield
 ```
 
 ```go
-import "github.com/ggwhite/go-masker/v3/zapfield"
+import "github.com/ggwhite/go-masker/zapfield"
 
 logger.Info("user login",
     zapfield.Phone("phone", "0987654321"),  // 0987***321
@@ -354,11 +354,11 @@ core = zapfield.WrapCore(core, zapfield.InterceptRules{
 ### slogfield — slog Integration
 
 ```bash
-go get github.com/ggwhite/go-masker/v3/slogfield
+go get github.com/ggwhite/go-masker/slogfield
 ```
 
 ```go
-import "github.com/ggwhite/go-masker/v3/slogfield"
+import "github.com/ggwhite/go-masker/slogfield"
 
 slog.Info("user login",
     slogfield.Phone("phone", "0987654321"),  // 0987***321
@@ -369,13 +369,13 @@ slog.Info("user login",
 ### ginmasker — Gin Middleware
 
 ```bash
-go get github.com/ggwhite/go-masker/v3/ginmasker
+go get github.com/ggwhite/go-masker/ginmasker
 ```
 
 Access log middleware that automatically masks sensitive fields in request/response JSON body. Only affects log output — never modifies the actual request or response.
 
 ```go
-import "github.com/ggwhite/go-masker/v3/ginmasker"
+import "github.com/ggwhite/go-masker/ginmasker"
 
 r := gin.New()
 r.Use(ginmasker.Middleware(
