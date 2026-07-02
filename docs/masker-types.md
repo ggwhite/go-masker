@@ -12,7 +12,7 @@ Complete reference for all built-in masker types.
 | `addr` | `address.go` | Masks last 6 chars | `台北市內湖區內湖路一段737巷1號` → `台北市內湖區內湖路一段7******` |
 | `email` | `email.go` | Keeps first 3 + domain | `john@gmail.com` → `joh****@gmail.com` |
 | `mobile` | `mobile.go` | Masks 3 digits from pos 4 | `0987654321` → `0987***321` |
-| `tel` | `telephone.go` | Formats `(XX)XXXX-****` | `0227993078` → `(02)2799-****` |
+| `tel` | `telephone.go` | Keeps area code, masks last 4 digits | `0227993078` → `(02)2799-****` |
 | `id` | `id.go` | Masks positions 7–10 | `A123456789` → `A12345****` |
 | `credit` | `credit.go` | Masks positions 7–12 | `4111111111111111` → `411111******1111` |
 | `url` | `url.go` | Masks URL password | `http://u:p@host` → `http://u:xxxxx@host` |

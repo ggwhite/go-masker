@@ -26,7 +26,7 @@ Each masker type has its own file:
 | `address.go` | `addr` — masks last 6 chars |
 | `email.go` | `email` — keeps first 3 chars + domain |
 | `mobile.go` | `mobile` — masks positions 4–6 |
-| `telephone.go` | `tel` — formats `(XX)XXXX-****` |
+| `telephone.go` | `tel` — keeps area code, masks last 4 digits |
 | `id.go` | `id` — masks positions 7–10 |
 | `credit.go` | `credit` — masks positions 7–12 |
 | `url.go` | `url` — masks URL password via `url.Redacted()` |

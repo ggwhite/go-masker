@@ -146,7 +146,7 @@ fmt.Println(m.Format(foo))
 | `addr`      | Masks last 6 characters          | `台北市內湖區內湖路一段737巷1號` | `台北市內湖區內湖路一段7******` |
 | `email`     | Keeps first 3 chars and domain   | `john@gmail.com`                 | `joh****@gmail.com`             |
 | `mobile`    | Masks 3 digits from 4th position | `0987654321`                     | `0987***321`                    |
-| `tel`       | Formats and masks last 4 digits  | `0227993078`                     | `(02)2799-****`                 |
+| `tel`       | Keeps area code, masks last 4 digits  | `0227993078`                     | `(02)2799-****`                 |
 | `id`        | Masks digits 7–10                | `A123456789`                     | `A12345****`                    |
 | `credit`    | Masks digits 7–12                | `4111111111111111`               | `411111******1111`              |
 | `url`       | Masks URL password               | `http://user:pass@host`          | `http://user:xxxxx@host`        |
