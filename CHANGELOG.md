@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Features
+
+- **`tel-` 動態遮罩 tag** — 支援自訂區碼／號碼／（可選）國際碼位數與分隔符（`dash`/`space`），解決固定 `(XX)XXXX-****` 格式無法涵蓋 3 碼區碼（如中國 `755`）或含國際碼場景的問題（[#40](https://github.com/ggwhite/go-masker/issues/40)）；不影響既有 `tel` tag 行為
+
 ## [3.1.0] - 2026-06-23
 
 ### Features

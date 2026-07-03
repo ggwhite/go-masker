@@ -27,6 +27,39 @@ Handled by `parseGenericMask()` in `generic.go`. No registration needed.
 |---------|----------|---------|
 | `first-N` | Masks first N chars | `mask:"first-3"` on `ABCDEF` → `***DEF` |
 | `last-N` | Masks last N chars | `mask:"last-4"` on `ABCDEFGH` → `ABCD****` |
+| `tel-<regionLen>-<numberLen>[-<sep>]` | Configurable-length phone masking, dash/space separator | `mask:"tel-2-8"` on `0227993078` → `02-2799-****` |
+| `tel-<intlLen>-<regionLen>-<numberLen>[-<sep>]` | Same, with leading international code | `mask:"tel-2-3-8"` on `8675588888888` → `+86-755-8888-****` |
+
+### tel- dynamic tag
+
+Grammar: `tel-` followed by 2–4 `-`-separated tokens.
+
+- `regionLen`, `intlLen`: positive integers (digit counts)
+- `numberLen`: integer `>= 4` (includes the masked last 4 digits)
+- `sep`: keyword `dash` (default, outputs `-`) or `space` (outputs ` `)
+
+Disambiguation for 3-token tags: if the 3rd token is `dash`/`space`, it's
+`[regionLen, numberLen, sep]`; if it parses as a positive integer, it's
+`[intlLen, regionLen, numberLen]`. A keyword and a valid integer can never
+be the same string, so this is unambiguous.
+
+Splitting: the cleaned input (formatting chars and leading `+` stripped,
+same cleanup as `tel`) must have length exactly
+`intlLen + regionLen + numberLen`. Any other length — including one digit
+too many — is treated as invalid and the cleaned value is returned
+unmasked. **No trunk-prefix (leading domestic `0`) guessing is performed.**
+Phone number normalization (e.g. converting `0928xxxxxx` to the E.164-style
+`928xxxxxx` before adding a country code) is the caller's responsibility —
+it's country-specific and out of scope for a masking library.
+
+| Tag | Input (caller-normalized) | Output |
+|-----|---------------------------|--------|
+| `tel-2-8` | `0227993078` | `02-2799-****` |
+| `tel-3-8-space` | `75588888888` | `755 8888-****` |
+| `tel-2-3-8` | `8675588888888` | `+86-755-8888-****` |
+
+See [`docs/design/F013-tel-configurable-region-spec.md`](design/F013-tel-configurable-region-spec.md)
+for the full design rationale.
 
 ## Structural Tags
 

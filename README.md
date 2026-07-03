@@ -171,6 +171,24 @@ masked, _ := m.Struct(&Token{Code: "ABC123", Suffix: "secret99"})
 // Suffix: "secr****"
 ```
 
+Use `tel-<regionLen>-<numberLen>[-sep]` (optionally prefixed with
+`<intlLen>-`) when the fixed `tel` format doesn't fit — e.g. area codes
+longer than 2 digits, or numbers that include a country code:
+
+```go
+type Contact struct {
+    TWPhone     string `mask:"tel-2-8"`         // "0227993078" -> "02-2799-****"
+    CNPhone     string `mask:"tel-3-8-space"`   // "75588888888" -> "755 8888-****"
+    IntlPhone   string `mask:"tel-2-3-8"`       // "8675588888888" -> "+86-755-8888-****"
+}
+```
+
+The input must already be normalized to the exact digit count implied by
+the tag (no leading trunk `0`, no formatting other than optional
+`+`/`-`/space/`()` which are stripped). See
+[`docs/masker-types.md`](docs/masker-types.md#tel--dynamic-tag) for the
+full grammar.
+
 ### Masking Slices
 
 String slices are also supported:
