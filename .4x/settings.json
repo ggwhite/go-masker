@@ -43,27 +43,53 @@
   "profiles": {
     "full": {
       "phases": [
-        {"phase": "designing"},
-        {"phase": "design-reviewing"},
-        {"phase": "coding"},
-        {"phase": "reviewing"},
-        {"phase": "deep-reviewing"},
-        {"phase": "testing"},
-        {"phase": "accepting"}
+        {
+          "phase": "designing"
+        },
+        {
+          "phase": "design-reviewing"
+        },
+        {
+          "phase": "coding"
+        },
+        {
+          "phase": "reviewing"
+        },
+        {
+          "phase": "deep-reviewing"
+        },
+        {
+          "phase": "testing"
+        },
+        {
+          "phase": "accepting"
+        }
       ]
     },
     "normal": {
       "phases": [
-        {"phase": "coding"},
-        {"phase": "reviewing"},
-        {"phase": "testing"},
-        {"phase": "accepting"}
+        {
+          "phase": "coding"
+        },
+        {
+          "phase": "reviewing"
+        },
+        {
+          "phase": "testing"
+        },
+        {
+          "phase": "accepting"
+        }
       ]
     },
     "quick": {
       "phases": [
-        {"phase": "coding"},
-        {"phase": "reviewing"}
+        {
+          "phase": "coding"
+        },
+        {
+          "phase": "reviewing"
+        }
       ]
     }
   },
@@ -119,6 +145,25 @@
         "必須讀取所有 round 的 review-report、test-report、deep-review-report，不只最後一輪",
         "對 OPEN 的 issue 要誠實標註，不可隱藏未解決的問題"
       ]
+    }
+  },
+  "runners": {
+    "claude": {
+      "command": "claude",
+      "args": [
+        "--dangerously-skip-permissions",
+        "-p",
+        "{prompt}",
+        "--output-format",
+        "stream-json",
+        "--verbose"
+      ],
+      "model": "opus",
+      "output_format": "stream-json",
+      "tiers": {
+        "opus": "claude-opus-4-6",
+        "sonnet": "sonnet"
+      }
     }
   }
 }

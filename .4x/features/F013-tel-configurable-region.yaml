@@ -67,7 +67,7 @@ description: |
 
     既有 `TypeTel`（`mask:"tel"`）與 `TelephoneMasker` 完全不動，新 tag 為純
     新增的動態解析路徑。
-status: not-started
+status: done
 priority: 2
 profile: full
 subtasks:
@@ -80,20 +80,20 @@ subtasks:
       status: ""
       description: 含 numberLen==4 邊界省略空前置碼片段；抽出既有清理邏輯為共用 helper
       depends:
-          - dynamic-tag-parser
+        - dynamic-tag-parser
     - id: error-handling
       name: 非法參數回傳 error，長度不符回傳原值不遮罩
       status: ""
       description: intlLen/regionLen<=0、numberLen<4、分段數錯誤、第三段消歧義失敗 → error；長度不等於 total（含多 1 碼）→ 不遮罩回傳原值，不做 trunk prefix 猜測
       depends:
-          - dynamic-tag-parser
+        - dynamic-tag-parser
     - id: tests
-      name: 涵蓋 issue #40 範例、國際碼、space 分隔符、邊界與錯誤情況
+      name: 涵蓋 issue
       status: ""
       description: 含既有 tel tag 回歸測試，確認行為完全不受影響
       depends:
-          - split-output-format
-          - error-handling
+        - split-output-format
+        - error-handling
 rules:
     - 不修改既有 tel tag 行為與輸出格式
     - 不改動 Masker interface，比照 first-N/last-N 的動態 tag 模式
