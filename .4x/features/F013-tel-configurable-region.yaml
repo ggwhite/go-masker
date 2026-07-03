@@ -1,0 +1,102 @@
+id: F013-tel-configurable-region
+name: 'F013: tel masker 支援可配置區碼／號碼長度'
+description: |
+    來源：https://github.com/ggwhite/go-masker/issues/40
+
+    完整設計見 docs/design/F013-tel-configurable-region-spec.md（Designer 角色請務必先讀）。
+
+    ## 背景
+
+    現行 TelephoneMasker（`tel` tag）寫死「8 碼免區碼／11 碼固定 2 碼區碼」，
+    輸出固定為 `(02)2799-****`。實際市話區碼長度不只 2 碼（如中國深圳 `755`、
+    美國 `212` 等），且部分場景需要含國際碼，無法涵蓋。
+
+    ## 目標
+
+    比照 `generic.go` 現有的 `first-N`/`last-N` 動態 tag 模式（不需註冊、
+    tag 直接帶參數），新增 `tel-` 前綴的動態 tag：
+
+    ```
+    tel-<regionLen>-<numberLen>                    // 無國際碼，預設 dash 分隔
+    tel-<regionLen>-<numberLen>-<sep>               // 無國際碼，指定分隔符
+    tel-<intlLen>-<regionLen>-<numberLen>           // 含國際碼，預設 dash 分隔
+    tel-<intlLen>-<regionLen>-<numberLen>-<sep>     // 含國際碼，指定分隔符
+    ```
+
+    - `regionLen`／`intlLen`：正整數，位數
+    - `numberLen`：整數，`>= 4`（含被遮罩的末 4 碼）
+    - `sep`：關鍵字 `dash`（預設，輸出 `-`）或 `space`（輸出空格）
+
+    ### 消歧義規則
+
+    `tel-` 後以 `-` split 出的 token 數量：2 段為 `[regionLen, numberLen]`；
+    3 段時看第三個 token——是 `dash`/`space` 關鍵字就是
+    `[regionLen, numberLen, sep]`，能 parse 成正整數就是
+    `[intlLen, regionLen, numberLen]`；4 段固定是
+    `[intlLen, regionLen, numberLen, sep]`。
+
+    ## 拆分與輸出規則
+
+    輸入先套用現有清理邏輯（去除空格、括號、dash、開頭 `+`），清理後長度記為
+    L，`total = intlLen + regionLen + numberLen`（無國際碼時 intlLen=0）：
+
+    - `L == total` → 依序左切：國際碼／區碼／本地號碼
+    - 其他長度（含剛好多 1 碼）→ 視為不合法輸入，回傳清理後的原值（不遮罩），
+      與現行 `tel` 對長度不符的行為一致。**不做 trunk prefix（前導 0）猜測性
+      剝除**——電話號碼正規化是呼叫端責任，go-masker 不猜。
+
+    輸出格式：`[+<國際碼><sep>]<區碼><sep>[<本地號碼前(numberLen-4)碼><sep>]<mask*4>`，
+    numberLen 剛好等於 4（無明碼前綴）時省略空的前置碼片段。
+
+    範例：
+
+    | tag | 輸入（呼叫端已正規化） | 輸出 |
+    |---|---|---|
+    | `tel-2-8` | `0227993078` | `02-2799-****` |
+    | `tel-3-8` | `75588888888` | `755-8888-****` |
+    | `tel-2-3-8-space` | `8675588888888` | `+86 755 8888-****` |
+
+    ## Non-goal
+
+    - 不做電話號碼正規化（不猜測剝除 trunk prefix／前導 0）
+    - 不保證對「已遮罩過的值」再次遮罩仍正確
+    - separator 只支援 `dash`/`space` 兩種關鍵字，不做開放式自訂符號
+    - 不處理 mobile／id／password 等其他 masker type
+
+    ## 向後相容
+
+    既有 `TypeTel`（`mask:"tel"`）與 `TelephoneMasker` 完全不動，新 tag 為純
+    新增的動態解析路徑。
+status: not-started
+priority: 2
+profile: full
+subtasks:
+    - id: dynamic-tag-parser
+      name: generic.go 新增 tel-<...> tag 解析與消歧義判讀（2/3/4 段）
+      status: ""
+      description: parseGenericMask 新增 tel- 前綴分派，新增 parseTelMask 函式
+    - id: split-output-format
+      name: 依 intlLen/regionLen/numberLen/sep 拆分並組出遮罩輸出格式
+      status: ""
+      description: 含 numberLen==4 邊界省略空前置碼片段；抽出既有清理邏輯為共用 helper
+      depends:
+          - dynamic-tag-parser
+    - id: error-handling
+      name: 非法參數回傳 error，長度不符回傳原值不遮罩
+      status: ""
+      description: intlLen/regionLen<=0、numberLen<4、分段數錯誤、第三段消歧義失敗 → error；長度不等於 total（含多 1 碼）→ 不遮罩回傳原值，不做 trunk prefix 猜測
+      depends:
+          - dynamic-tag-parser
+    - id: tests
+      name: 涵蓋 issue #40 範例、國際碼、space 分隔符、邊界與錯誤情況
+      status: ""
+      description: 含既有 tel tag 回歸測試，確認行為完全不受影響
+      depends:
+          - split-output-format
+          - error-handling
+rules:
+    - 不修改既有 tel tag 行為與輸出格式
+    - 不改動 Masker interface，比照 first-N/last-N 的動態 tag 模式
+    - 不做電話號碼正規化，不猜測剝除 trunk prefix／前導 0，長度不符一律視為不合法輸入
+    - separator 支援 dash（預設）與 space 兩種關鍵字，不支援其他自訂符號
+    - intlLen/regionLen<=0 或 numberLen<4 視為非法 tag，回傳 error（比照 first-N/last-N 對非法 N 的處理）
