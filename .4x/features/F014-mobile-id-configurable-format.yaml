@@ -54,7 +54,7 @@ description: |
 
     既有 `TypeMobile`（`mask:"mobile"`）與 MobileMasker、`TypeID`（`mask:"id"`）
     與 IDMasker 完全不動，新 tag 為純新增的動態解析路徑。
-status: in-progress
+status: done
 priority: 2
 profile: full
 subtasks:
