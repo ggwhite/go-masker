@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-07-07
+
+### Features
+
+- **`mobile-` 動態遮罩 tag** — `mobile-<keepFront>-<keepEnd>` 支援各國手機號碼格式，保留前幾碼與後幾碼、中間全遮罩（如日本 `mobile-3-4`、英國 `mobile-0-4`）；不影響既有 `mobile` tag 行為
+- **`id-` 動態遮罩 tag** — `id-<keepFront>-<keepEnd>` 支援各國身分證件格式（如美國 SSN `id-0-4`、日本 My Number `id-4-0`），與 `mobile-` 共用相同的 keepFront/keepEnd 語意；不影響既有 `id` tag 行為
+
+## [3.2.0] - 2026-07-07
+
 ### Features
 
 - **`tel-` 動態遮罩 tag** — 支援自訂區碼／號碼／（可選）國際碼位數與分隔符（`dash`/`space`），解決固定 `(XX)XXXX-****` 格式無法涵蓋 3 碼區碼（如中國 `755`）或含國際碼場景的問題（[#40](https://github.com/ggwhite/go-masker/issues/40)）；不影響既有 `tel` tag 行為
