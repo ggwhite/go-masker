@@ -29,6 +29,8 @@ Handled by `parseGenericMask()` in `generic.go`. No registration needed.
 | `last-N` | Masks last N chars | `mask:"last-4"` on `ABCDEFGH` → `ABCD****` |
 | `tel-<regionLen>-<numberLen>[-<sep>]` | Configurable-length phone masking, dash/space separator | `mask:"tel-2-8"` on `0227993078` → `02-2799-****` |
 | `tel-<intlLen>-<regionLen>-<numberLen>[-<sep>]` | Same, with leading international code | `mask:"tel-2-3-8"` on `8675588888888` → `+86-755-8888-****` |
+| `mobile-<keepFront>-<keepEnd>` | Keep first F and last E chars, mask middle | `mask:"mobile-3-4"` on `09012345678` → `090****5678` |
+| `id-<keepFront>-<keepEnd>` | Keep first F and last E chars, mask middle | `mask:"id-0-4"` on `123456789` → `*****6789` |
 
 ### tel- dynamic tag
 
@@ -59,6 +61,38 @@ it's country-specific and out of scope for a masking library.
 | `tel-2-3-8` | `8675588888888` | `+86-755-8888-****` |
 
 See [`docs/design/F013-tel-configurable-region-spec.md`](design/F013-tel-configurable-region-spec.md)
+for the full design rationale.
+
+### mobile- dynamic tag
+
+Grammar: `mobile-<keepFront>-<keepEnd>`
+
+- `keepFront`: non-negative integer — number of leading characters to keep
+- `keepEnd`: non-negative integer — number of trailing characters to keep
+- `keepFront` and `keepEnd` cannot both be 0
+
+Everything between the kept portions is replaced with the mask character.
+If `keepFront + keepEnd >= len(value)`, the value is returned unchanged
+(nothing to mask).
+
+| Tag | Input | Country | Output |
+|-----|-------|---------|--------|
+| `mobile-3-4` | `09012345678` | Japan (11 digits) | `090****5678` |
+| `mobile-3-4` | `2025551234` | USA (10 digits) | `202***1234` |
+| `mobile-0-4` | `447911123456` | UK (12 digits) | `********3456` |
+| `mobile-4-0` | `0987654321` | Custom | `0987******` |
+
+### id- dynamic tag
+
+Grammar: `id-<keepFront>-<keepEnd>` — same semantics as `mobile-`.
+
+| Tag | Input | Country | Output |
+|-----|-------|---------|--------|
+| `id-0-4` | `123456789` | USA SSN (9 digits) | `*****6789` |
+| `id-4-0` | `123456789012` | Japan My Number (12 digits) | `1234********` |
+| `id-3-3` | `S1234567D` | Singapore NRIC (9 chars) | `S12***67D` |
+
+See [`docs/design/F014-mobile-id-configurable-format-spec.md`](design/F014-mobile-id-configurable-format-spec.md)
 for the full design rationale.
 
 ## Structural Tags

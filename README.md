@@ -146,8 +146,10 @@ fmt.Println(m.Format(foo))
 | `addr`      | Masks last 6 characters          | `台北市內湖區內湖路一段737巷1號` | `台北市內湖區內湖路一段7******` |
 | `email`     | Keeps first 3 chars and domain   | `john@gmail.com`                 | `joh****@gmail.com`             |
 | `mobile`    | Masks 3 digits from 4th position | `0987654321`                     | `0987***321`                    |
+| `mobile-F-E`| Keep first F, last E, mask middle| `09012345678` (`mobile-3-4`)     | `090****5678`                   |
 | `tel`       | Formats and masks last 4 digits  | `0227993078`                     | `(02)2799-****`                 |
 | `id`        | Masks digits 7–10                | `A123456789`                     | `A12345****`                    |
+| `id-F-E`    | Keep first F, last E, mask middle| `123456789` (`id-0-4`)           | `*****6789`                     |
 | `credit`    | Masks digits 7–12                | `4111111111111111`               | `411111******1111`              |
 | `url`       | Masks URL password               | `http://user:pass@host`          | `http://user:xxxxx@host`        |
 | `all`       | Replaces every character         | `secret`                         | `******`                        |
@@ -188,6 +190,24 @@ the tag (no leading trunk `0`, no formatting other than optional
 `+`/`-`/space/`()` which are stripped). See
 [`docs/masker-types.md`](docs/masker-types.md#tel--dynamic-tag) for the
 full grammar.
+
+Use `mobile-<keepFront>-<keepEnd>` and `id-<keepFront>-<keepEnd>` to
+mask data for different countries — keep the first F and last E
+characters, mask everything in between:
+
+```go
+type User struct {
+    PhoneJP  string `mask:"mobile-3-4"` // "09012345678" -> "090****5678"
+    PhoneUS  string `mask:"mobile-3-4"` // "2025551234"  -> "202***1234"
+    SSN      string `mask:"id-0-4"`     // "123456789"   -> "*****6789"
+    MyNumber string `mask:"id-4-0"`     // "123456789012" -> "1234********"
+}
+```
+
+If `keepFront + keepEnd >= len(value)`, the value is returned unchanged
+(nothing to mask). See
+[`docs/masker-types.md`](docs/masker-types.md#mobile--dynamic-tag) for
+details.
 
 ### Masking Slices
 
