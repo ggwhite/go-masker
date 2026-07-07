@@ -31,6 +31,7 @@ Handled by `parseGenericMask()` in `generic.go`. No registration needed.
 | `tel-<intlLen>-<regionLen>-<numberLen>[-<sep>]` | Same, with leading international code | `mask:"tel-2-3-8"` on `8675588888888` → `+86-755-8888-****` |
 | `mobile-<keepFront>-<keepEnd>` | Keep first F and last E chars, mask middle | `mask:"mobile-3-4"` on `09012345678` → `090****5678` |
 | `id-<keepFront>-<keepEnd>` | Keep first F and last E chars, mask middle | `mask:"id-0-4"` on `123456789` → `*****6789` |
+| `mid-<keepFront>-<keepEnd>` | Generic version of mobile-/id- | `mask:"mid-4-4"` on `sk-abc123xyz` → `sk-a***3xyz` |
 
 ### tel- dynamic tag
 
@@ -91,6 +92,18 @@ Grammar: `id-<keepFront>-<keepEnd>` — same semantics as `mobile-`.
 | `id-0-4` | `123456789` | USA SSN (9 digits) | `*****6789` |
 | `id-4-0` | `123456789012` | Japan My Number (12 digits) | `1234********` |
 | `id-3-3` | `S1234567D` | Singapore NRIC (9 chars) | `S12***67D` |
+
+### mid- dynamic tag
+
+Grammar: `mid-<keepFront>-<keepEnd>` — generic version of `mobile-` and
+`id-`, same semantics. Use when the field doesn't fit the mobile/id
+category (API keys, tokens, account numbers, etc.).
+
+| Tag | Input | Output |
+|-----|-------|--------|
+| `mid-4-4` | `sk-abc123xyz` | `sk-a***3xyz` |
+| `mid-2-2` | `ABCDEF` | `AB**EF` |
+| `mid-1-0` | `secret` | `s*****` |
 
 See [`docs/design/F014-mobile-id-configurable-format-spec.md`](design/F014-mobile-id-configurable-format-spec.md)
 for the full design rationale.

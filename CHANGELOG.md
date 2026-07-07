@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **`mobile-` 動態遮罩 tag** — `mobile-<keepFront>-<keepEnd>` 支援各國手機號碼格式，保留前幾碼與後幾碼、中間全遮罩（如日本 `mobile-3-4`、英國 `mobile-0-4`）；不影響既有 `mobile` tag 行為
 - **`id-` 動態遮罩 tag** — `id-<keepFront>-<keepEnd>` 支援各國身分證件格式（如美國 SSN `id-0-4`、日本 My Number `id-4-0`），與 `mobile-` 共用相同的 keepFront/keepEnd 語意；不影響既有 `id` tag 行為
+- **`mid-` 動態遮罩 tag** — `mid-<keepFront>-<keepEnd>` 通用版本，適用於 API key、token 等不屬於 mobile/id 類別的欄位
 
 ## [3.2.0] - 2026-07-07
 

@@ -64,6 +64,7 @@ func maskKeepFrontEnd(maskChar, tag, value string, keepFront, keepEnd int) (stri
 //   - "tel-..."    — 依區碼／號碼長度遮罩市話號碼
 //   - "mobile-F-E" — 保留前 F 碼後 E 碼，中間遮罩
 //   - "id-F-E"     — 保留前 F 碼後 E 碼，中間遮罩
+//   - "mid-F-E"    — 通用版：保留前 F 碼後 E 碼，中間遮罩
 //
 // 命中時回傳 (遮罩值, true, nil)；非動態樣式回傳 ("", false, nil)；
 // 樣式被識別但參數不合法時回傳 ("", false, err)。
@@ -108,6 +109,15 @@ func parseGenericMask(maskChar, tag, value string) (string, bool, error) {
 
 	if strings.HasPrefix(tag, "id-") {
 		rest := strings.TrimPrefix(tag, "id-")
+		keepFront, keepEnd, err := parseKeepFrontEnd(tag, rest)
+		if err != nil {
+			return "", false, err
+		}
+		return maskKeepFrontEnd(maskChar, tag, value, keepFront, keepEnd)
+	}
+
+	if strings.HasPrefix(tag, "mid-") {
+		rest := strings.TrimPrefix(tag, "mid-")
 		keepFront, keepEnd, err := parseKeepFrontEnd(tag, rest)
 		if err != nil {
 			return "", false, err

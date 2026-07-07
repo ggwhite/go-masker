@@ -192,6 +192,15 @@ func TestParseGenericMask_MobileID(t *testing.T) {
 		{tag: "mobile-2-2", value: "你好世界測試", want: "你好**測試", matched: true},
 		{tag: "id-1-1", value: "甲乙丙", want: "甲*丙", matched: true},
 
+		// mid 通用標籤
+		{tag: "mid-3-4", value: "09012345678", want: "090****5678", matched: true},
+		{tag: "mid-0-4", value: "123456789", want: "*****6789", matched: true},
+		{tag: "mid-2-2", value: "ABCDEF", want: "AB**EF", matched: true},
+		{tag: "mid-1-0", value: "secret", want: "s*****", matched: true},
+		{tag: "mid-5-5", value: "1234567890", want: "1234567890", matched: true},
+		{tag: "mid-2-2", value: "你好世界測試", want: "你好**測試", matched: true},
+		{tag: "mid-0-0", value: "123", matched: false, wantErr: true},
+
 		// 錯誤案例
 		{tag: "mobile-0-0", value: "123", matched: false, wantErr: true},
 		{tag: "id-0-0", value: "123", matched: false, wantErr: true},
@@ -228,6 +237,7 @@ func TestMarshal_GenericTags_MobileID(t *testing.T) {
 		// 端對端整合
 		{"mobile-3-4", "09012345678", "090****5678"},
 		{"id-0-4", "123456789", "*****6789"},
+		{"mid-2-2", "ABCDEF", "AB**EF"},
 		// 回歸——既有行為不變
 		{TypeMobile, "0987654321", "0987***321"},
 		{TypeID, "A123456789", "A12345****"},

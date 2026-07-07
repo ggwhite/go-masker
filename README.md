@@ -150,6 +150,7 @@ fmt.Println(m.Format(foo))
 | `tel`       | Formats and masks last 4 digits  | `0227993078`                     | `(02)2799-****`                 |
 | `id`        | Masks digits 7–10                | `A123456789`                     | `A12345****`                    |
 | `id-F-E`    | Keep first F, last E, mask middle| `123456789` (`id-0-4`)           | `*****6789`                     |
+| `mid-F-E`   | Generic: keep F front, E end     | `sk-abc123xyz` (`mid-4-4`)       | `sk-a***3xyz`                   |
 | `credit`    | Masks digits 7–12                | `4111111111111111`               | `411111******1111`              |
 | `url`       | Masks URL password               | `http://user:pass@host`          | `http://user:xxxxx@host`        |
 | `all`       | Replaces every character         | `secret`                         | `******`                        |
@@ -191,9 +192,10 @@ the tag (no leading trunk `0`, no formatting other than optional
 [`docs/masker-types.md`](docs/masker-types.md#tel--dynamic-tag) for the
 full grammar.
 
-Use `mobile-<keepFront>-<keepEnd>` and `id-<keepFront>-<keepEnd>` to
-mask data for different countries — keep the first F and last E
-characters, mask everything in between:
+Use `mid-<keepFront>-<keepEnd>` to keep the first F and last E
+characters while masking everything in between. `mobile-` and `id-` are
+semantic aliases — same behavior, but the tag name documents the field's
+data type:
 
 ```go
 type User struct {
@@ -201,6 +203,7 @@ type User struct {
     PhoneUS  string `mask:"mobile-3-4"` // "2025551234"  -> "202***1234"
     SSN      string `mask:"id-0-4"`     // "123456789"   -> "*****6789"
     MyNumber string `mask:"id-4-0"`     // "123456789012" -> "1234********"
+    APIKey   string `mask:"mid-4-4"`    // "sk-abc123xyz" -> "sk-a***3xyz"
 }
 ```
 
