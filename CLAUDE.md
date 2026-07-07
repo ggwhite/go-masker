@@ -103,3 +103,5 @@ release notes 格式：
 - `MaskerType` — string alias for masker tag values
 - `AbuseMasker` — trie-based masker, must be initialized with words
 - `AbuseWordLoader` — loads word lists from file or `io.Reader`
+
+@.4x/learnings-context.md

@@ -28,12 +28,17 @@ Thumbs.db
 !.4x/settings.json
 !.4x/learnings.json
 .4x/*.log
+.4x/*.jsonl
 .4x/batch-*
 .4x/batch.*
 !.4x/features/
+!.4x/learnings-context.md
 
 # Worktrees
 .worktrees/
 
 # Superpowers
 .superpowers/
+
+# Codegraph index
+.codegraph/

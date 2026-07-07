@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cake Portfolio - go-masker</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f8fbff;
+      --soft: #d8e4ef;
+      --muted: #9baaba;
+      --panel: rgba(9, 15, 24, .76);
+      --panel-strong: rgba(11, 18, 29, .94);
+      --line: rgba(230, 237, 243, .15);
+      --cake: #2bb673;
+      --mint: #78f2b5;
+      --blue: #58a6ff;
+      --cyan: #39c5cf;
+      --amber: #f2cc60;
+      --rose: #ff7b9c;
+      --violet: #a78bfa;
+    }
+
+    * { box-sizing: border-box; margin: 0; }
+
+    body {
+      margin: 0;
+      background: #05070b;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    .canvas {
+      position: relative;
+      overflow: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 620px 470px at 9% 8%, rgba(43,182,115,.36), transparent),
+        radial-gradient(ellipse 560px 420px at 90% 12%, rgba(88,166,255,.25), transparent),
+        radial-gradient(ellipse 520px 430px at 72% 92%, rgba(167,139,250,.18), transparent),
+        linear-gradient(145deg, #07100d, #0a1422 50%, #11101d);
+    }
+
+    .slide {
+      width: 1080px;
+      height: 1350px;
+    }
+
+    .banner {
+      width: 1200px;
+      height: 360px;
+    }
+
+    .grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 88%);
+    }
+
+    .frame {
+      position: absolute; inset: 30px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative; z-index: 1;
+      height: 100%;
+      padding: 58px 64px 50px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+    }
+
+    .mark {
+      width: 86px;
+      height: 86px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(43,182,115,.95), rgba(88,166,255,.88));
+      box-shadow: 0 18px 54px rgba(43,182,115,.25);
+      color: #06110c;
+      font-size: 43px;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .brand-copy {
+      padding-top: 8px;
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.28;
+      font-weight: 900;
+      letter-spacing: 2.3px;
+      text-transform: uppercase;
+    }
+
+    .number {
+      min-width: 104px;
+      padding: 14px 18px;
+      border: 1px solid rgba(120,242,181,.45);
+      border-radius: 999px;
+      background: rgba(43,182,115,.12);
+      color: #d5ffe8;
+      font-size: 23px;
+      line-height: 1;
+      font-weight: 950;
+      text-align: center;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .eyebrow {
+      margin-top: 44px;
+      font-size: 25px;
+      line-height: 1.2;
+      font-weight: 950;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin-top: 18px;
+      max-width: 960px;
+      font-size: 74px;
+      line-height: 1.08;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin-top: 24px;
+      max-width: 920px;
+      color: var(--soft);
+      font-size: 34px;
+      line-height: 1.42;
+      font-weight: 750;
+    }
+
+    .footer {
+      margin-top: auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 30px;
+      color: var(--muted);
+      font-size: 23px;
+      line-height: 1.25;
+      font-weight: 850;
+    }
+
+    .repo {
+      color: #eef4fb;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 22px;
+      font-weight: 850;
+    }
+
+    .mint { color: var(--mint); }
+    .blue { color: var(--blue); }
+    .cyan { color: var(--cyan); }
+    .amber { color: var(--amber); }
+    .rose { color: var(--rose); }
+    .violet { color: var(--violet); }
+
+    .stat-row {
+      margin-top: 38px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .stat, .card, .mini, .codebox, .row-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
+    }
+
+    .stat {
+      padding: 28px 26px;
+      border-radius: 20px;
+    }
+
+    .stat-value {
+      font-size: 56px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .stat-label {
+      margin-top: 10px;
+      color: #b8c5d4;
+      font-size: 22px;
+      line-height: 1.3;
+      font-weight: 800;
+    }
+
+    .thesis {
+      margin-top: 34px;
+      padding: 28px 32px;
+      border-left: 6px solid var(--cake);
+      background: rgba(43,182,115,.09);
+      color: #eafff3;
+      font-size: 30px;
+      line-height: 1.42;
+      font-weight: 900;
+    }
+
+    .mini-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 20px 22px;
+      border-radius: 16px;
+    }
+
+    .mini strong {
+      display: block;
+      font-size: 23px;
+      line-height: 1.2;
+      font-weight: 950;
+    }
+
+    .mini span {
+      display: block;
+      margin-top: 8px;
+      color: #b8c5d4;
+      font-size: 19px;
+      line-height: 1.35;
+      font-weight: 720;
+    }
+
+    .flow {
+      margin-top: 34px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .flow-item {
+      display: grid;
+      grid-template-columns: 94px 1fr;
+      gap: 20px;
+      align-items: start;
+      padding: 26px 28px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+    }
+
+    .flow-id {
+      padding: 10px 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(14,20,31,.7);
+      color: var(--mint);
+      font-size: 18px;
+      font-weight: 950;
+      text-align: center;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .flow-body strong {
+      display: block;
+      font-size: 29px;
+      line-height: 1.16;
+      font-weight: 950;
+    }
+
+    .flow-body span {
+      display: block;
+      margin-top: 8px;
+      color: #c1ccda;
+      font-size: 22px;
+      line-height: 1.35;
+      font-weight: 740;
+    }
+
+    .codebox {
+      margin-top: 30px;
+      padding: 30px;
+      border-radius: 20px;
+      background: rgba(5, 10, 17, .86);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .codebox .line {
+      font-size: 24px;
+      line-height: 1.56;
+      color: #dbe7f3;
+      white-space: pre;
+    }
+
+    .comment { color: #718096; }
+    .kw { color: #ff9fb6; }
+    .str { color: #9be9a8; }
+    .tag { color: #79c0ff; }
+
+    .matrix {
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      min-height: 178px;
+      padding: 26px 28px;
+      border-radius: 18px;
+    }
+
+    .card strong {
+      display: block;
+      font-size: 29px;
+      line-height: 1.1;
+      font-weight: 950;
+    }
+
+    .card span {
+      display: block;
+      margin-top: 10px;
+      color: #c0ccda;
+      font-size: 22px;
+      line-height: 1.38;
+      font-weight: 740;
+    }
+
+    .strip {
+      margin-top: 26px;
+      padding: 24px 28px;
+      border: 1px solid rgba(88,166,255,.28);
+      border-radius: 20px;
+      background: rgba(88,166,255,.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 11px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(14,20,31,.72);
+      color: #e9f1fb;
+      font-size: 21px;
+      font-weight: 900;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .arrow {
+      color: var(--blue);
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .wide-note {
+      margin-top: 24px;
+      padding: 26px 30px;
+      border-left: 6px solid var(--rose);
+      background: rgba(255,123,156,.08);
+      color: #ffe2e9;
+      font-size: 28px;
+      line-height: 1.42;
+      font-weight: 900;
+    }
+
+    .table {
+      margin-top: 32px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .row-card {
+      padding: 23px 26px;
+      border-radius: 17px;
+      display: grid;
+      grid-template-columns: 210px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .row-card strong {
+      font-size: 25px;
+      line-height: 1.15;
+      font-weight: 950;
+    }
+
+    .row-card span {
+      color: #bfccda;
+      font-size: 21px;
+      line-height: 1.34;
+      font-weight: 730;
+    }
+
+    .banner .content {
+      padding: 46px 58px 42px;
+      justify-content: center;
+    }
+
+    .banner-layout {
+      display: grid;
+      grid-template-columns: 1fr 470px;
+      gap: 44px;
+      align-items: center;
+    }
+
+    .banner h1 {
+      margin-top: 10px;
+      font-size: 64px;
+      line-height: 1;
+    }
+
+    .banner .lead {
+      margin-top: 18px;
+      font-size: 25px;
+      line-height: 1.35;
+      max-width: 640px;
+    }
+
+    .terminal {
+      padding: 24px 26px;
+      border: 1px solid rgba(120,242,181,.26);
+      border-radius: 22px;
+      background: rgba(3, 8, 14, .82);
+      box-shadow: 0 24px 70px rgba(0,0,0,.26);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .terminal .dotline {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--rose);
+    }
+
+    .dot:nth-child(2) { background: var(--amber); }
+    .dot:nth-child(3) { background: var(--mint); }
+
+    .terminal p {
+      color: #dce8f4;
+      font-size: 22px;
+      line-height: 1.5;
+      font-weight: 800;
+      white-space: pre;
+    }
+
+    .preview {
+      width: 1296px;
+      height: 270px;
+      background: #f7f8fa;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      padding: 6px;
+    }
+
+    .preview-tile {
+      position: relative;
+      overflow: hidden;
+      background: #08111d;
+    }
+
+    .preview-tile .canvas {
+      transform: scale(.2);
+      transform-origin: top left;
+    }
+  </style>
+</head>
+<body>
+  <section class="canvas banner" data-file="cake-go-masker-banner.png">
+    <div class="grid"></div>
+    <div class="frame"></div>
+    <main class="content">
+      <div class="banner-layout">
+        <div>
+          <div class="brand">
+            <div class="mark">Go</div>
+            <div class="brand-copy">Cake Portfolio<br>Sensitive Data Masking</div>
+          </div>
+          <h1>go-masker</h1>
+          <p class="lead">用 struct tag 把敏感資料遮罩變成可重用、可測試、可擴充的 Go library。</p>
+        </div>
+        <div class="terminal">
+          <div class="dotline"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+          <p>Mobile  → 0987***321
+Email   → ggw****@gmail.com
+JSON    → masked by default
+Reveal  → explicit only</p>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <section class="canvas slide" data-file="cake-go-masker-01.png">
+    <div class="grid"></div>
+    <div class="frame"></div>
+    <main class="content">
+      <header class="top">
+        <div class="brand">
+          <div class="mark">Go</div>
+          <div class="brand-copy">Cake Portfolio<br>Open Source Library</div>
+        </div>
+        <div class="number">01/06</div>
+      </header>
+
+      <div class="eyebrow mint">Sensitive Data Masking</div>
+      <h1>把個資遮罩，<br>做成工程團隊能放心用的 Go library。</h1>
+      <p class="lead">go-masker 透過 struct tag 定義遮罩規則，讓 log、JSON、DB model 輸出敏感資料時有一致邊界。</p>
+
+      <section class="stat-row">
+        <article class="stat">
+          <div class="stat-value mint">17<span style="font-size:36px">+</span></div>
+          <div class="stat-label">Mask Tags<br>常見個資與動態規則</div>
+        </article>
+        <article class="stat">
+          <div class="stat-value blue">3</div>
+          <div class="stat-label">Output Paths<br>fmt · JSON · slog</div>
+        </article>
+        <article class="stat">
+          <div class="stat-value violet">Go</div>
+          <div class="stat-label">1.22+<br>泛型與標準介面整合</div>
+        </article>
+      </section>
+
+      <div class="thesis">核心目標：把「不要外洩」從人工記憶，變成型別、tag 與測試共同守住的預設行為。</div>
+
+      <section class="mini-grid">
+        <article class="mini">
+          <strong class="mint">低侵入</strong>
+          <span>在既有 struct 加 tag 即可使用</span>
+        </article>
+        <article class="mini">
+          <strong class="blue">可擴充</strong>
+          <span>Register 自訂 masker</span>
+        </article>
+        <article class="mini">
+          <strong class="violet">可驗證</strong>
+          <span>race、coverage、parity tests</span>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <span>個人作品集 · Go library / privacy tooling</span>
+        <span class="repo">github.com/ggwhite/go-masker</span>
+      </footer>
+    </main>
+  </section>
+
+  <section class="canvas slide" data-file="cake-go-masker-02.png">
+    <div class="grid"></div>
+    <div class="frame"></div>
+    <main class="content">
+      <header class="top">
+        <div class="brand">
+          <div class="mark">Go</div>
+          <div class="brand-copy">API Design<br>Struct Tag Workflow</div>
+        </div>
+        <div class="number">02/06</div>
+      </header>
+
+      <div class="eyebrow blue">Developer Experience</div>
+      <h1>使用者只要標 tag，<br>遮罩規則就跟著資料模型走。</h1>
+      <p class="lead">API 設計重點是少記憶負擔：欄位旁邊直接寫 `mask:"email"`、`mask:"mobile"`，呼叫 Struct 或 Format 取得一致結果。</p>
+
+      <section class="codebox">
+        <div class="line"><span class="kw">type</span> User <span class="kw">struct</span> {</div>
+        <div class="line">  Name     <span class="kw">string</span> <span class="tag">`mask:"name"`</span></div>
+        <div class="line">  Email    <span class="kw">string</span> <span class="tag">`mask:"email"`</span></div>
+        <div class="line">  Password <span class="kw">string</span> <span class="tag">`mask:"password"`</span></div>
+        <div class="line">  Mobile   <span class="kw">string</span> <span class="tag">`mask:"mobile"`</span></div>
+        <div class="line">}</div>
+        <div class="line comment">// → J**n D**e joh****@gmail.com ************** 0987***321</div>
+      </section>
+
+      <section class="strip">
+        <span class="pill">Struct()</span><span class="arrow">→</span>
+        <span class="pill">Marshal()</span><span class="arrow">→</span>
+        <span class="pill">Format()</span><span class="arrow">→</span>
+        <span class="pill">Sensitive[T]</span>
+      </section>
+
+      <div class="wide-note">作品集亮點：不只做「字串取代」，而是設計一套讓呼叫端自然寫對、也容易測試的 API surface。</div>
+
+      <footer class="footer">
+        <span>Quick Start · tag-driven masking</span>
+        <span class="repo">go get github.com/ggwhite/go-masker/v3</span>
+      </footer>
+    </main>
+  </section>
+
+  <section class="canvas slide" data-file="cake-go-masker-03.png">
+    <div class="grid"></div>
+    <div class="frame"></div>
+    <main class="content">
+      <header class="top">
+        <div class="brand">
+          <div class="mark">Go</div>
+          <div class="brand-copy">Type Safety<br>Leak Prevention</div>
+        </div>
+        <div class="number">03/06</div>
+      </header>
+
+      <div class="eyebrow rose">Sensitive[T]</div>
+      <h1>預設輸出是遮罩，<br>要看原文必須明確 Reveal。</h1>
+      <p class="lead">Sensitive[T] 把敏感值包成型別：fmt、JSON、slog 都走遮罩輸出，只有呼叫 Reveal() 才能取得原始值。</p>
+
+      <section class="matrix">
+        <article class="card">
+          <strong class="mint">fmt.Stringer</strong>
+          <span>fmt.Println(phone) 只會看到遮罩後電話，不把原文丟到 console。</span>
+        </article>
+        <article class="card">
+          <strong class="blue">json.Marshaler</strong>
+          <span>API response 或 debug dump 也遵守同一套遮罩語意。</span>
+        </article>
+        <article class="card">
+          <strong class="amber">slog.LogValuer</strong>
+          <span>結構化 log 裡的敏感欄位同樣自動保護。</span>
+        </article>
+        <article class="card">
+          <strong class="violet">driver.Valuer</strong>
+          <span>DB 寫入保留原值，應用層輸出維持遮罩。</span>
+        </article>
+      </section>
+
+      <section class="codebox">
+        <div class="line">phone := masker.NewPhone(<span class="str">"0987654321"</span>)</div>
+        <div class="line">fmt.Println(phone)          <span class="comment">// 0987***321</span></div>
+        <div class="line">fmt.Println(phone.Reveal()) <span class="comment">// 0987654321</span></div>
+      </section>
+
+      <footer class="footer">
+        <span>型別安全 · explicit reveal only</span>
+        <span class="repo">Sensitive[T]</span>
+      </footer>
+    </main>
+  </section>
+
+  <section class="canvas slide" data-file="cake-go-masker-04.png">
+    <div class="grid"></div>
+    <div class="frame"></div>
+    <main class="content">
+      <header class="top">
+        <div class="brand">
+          <div class="mark">Go</div>
+          <div class="brand-copy">Masker Coverage<br>Real-World Fields</div>
+        </div>
+        <div class="number">04/06</div>
+      </header>
+
+      <div class="eyebrow amber">Built-in Rules</div>
+      <h1>常見個資欄位，<br>內建規則一次補齊。</h1>
+      <p class="lead">從 password、email、mobile 到 credit、URL password、地址、敏感詞字典，涵蓋後端服務最常遇到的輸出風險。</p>
+
+      <section class="table">
+        <article class="row-card"><strong class="mint">email / mobile</strong><span>保留識別所需片段，遮掉中段資訊：`ggw****@gmail.com`、`0987***321`。</span></article>
+        <article class="row-card"><strong class="blue">id / credit</strong><span>依位數規則遮罩證號與卡號，避免 log 直接留下完整敏感資料。</span></article>
+        <article class="row-card"><strong class="violet">struct / mapstruct</strong><span>遞迴處理 nested struct、pointer、slice、map value，key 保持不變。</span></article>
+        <article class="row-card"><strong class="rose">abuse</strong><span>Trie-based word masking，可從檔案或 reader 載入自訂敏感詞。</span></article>
+        <article class="row-card"><strong class="amber">first-N / last-N</strong><span>用 tag 表達動態遮罩規則，不需要為每個欄位新增一個 masker。</span></article>
+      </section>
+
+      <footer class="footer">
+        <span>Built-ins · dynamic tags · custom word list</span>
+        <span class="repo">mask:"email"</span>
+      </footer>
+    </main>
+  </section>
+
+  <section class="canvas slide" data-file="cake-go-masker-05.png">
+    <div class="grid"></div>
+    <div class="frame"></div>
+    <main class="content">
+      <header class="top">
+        <div class="brand">
+          <div class="mark">Go</div>
+          <div class="brand-copy">Engineering Quality<br>Tests & Compatibility</div>
+        </div>
+        <div class="number">05/06</div>
+      </header>
+
+      <div class="eyebrow cyan">Reliability</div>
+      <h1>遮罩是安全邊界，<br>所以測試不能只看 happy path。</h1>
+      <p class="lead">專案補上 v2 parity、race、format allocation、SQL scan/value、redact mode 等測試，確保 library 行為穩定。</p>
+
+      <section class="flow">
+        <article class="flow-item">
+          <div class="flow-id">AC-07</div>
+          <div class="flow-body"><strong class="blue">Format 與 Struct 行為一致</strong><span>log-friendly output 不配置新 struct，但遮罩結果與 Struct() byte-identical。</span></div>
+        </article>
+        <article class="flow-item">
+          <div class="flow-id">AC-09</div>
+          <div class="flow-body"><strong class="mint">降低配置成本</strong><span>針對 Format() 做 allocation 測試，讓 debug/log path 更輕量。</span></div>
+        </article>
+        <article class="flow-item">
+          <div class="flow-id">AC-14</div>
+          <div class="flow-body"><strong class="rose">Abuse 字典遮罩</strong><span>敏感詞載入、命中、不同 mask char 與 struct tag 整合都有對應案例。</span></div>
+        </article>
+        <article class="flow-item">
+          <div class="flow-id">SQL</div>
+          <div class="flow-body"><strong class="amber">DB round-trip</strong><span>Sensitive[T] 支援 sql.Scanner / driver.Valuer，nil 與型別轉換都明確處理。</span></div>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <span>make test · race detector · coverage profile</span>
+        <span class="repo">go test -race ./...</span>
+      </footer>
+    </main>
+  </section>
+
+  <section class="canvas slide" data-file="cake-go-masker-06.png">
+    <div class="grid"></div>
+    <div class="frame"></div>
+    <main class="content">
+      <header class="top">
+        <div class="brand">
+          <div class="mark">Go</div>
+          <div class="brand-copy">Portfolio Summary<br>Backend Craft</div>
+        </div>
+        <div class="number">06/06</div>
+      </header>
+
+      <div class="eyebrow mint">What This Shows</div>
+      <h1>這不是 demo，<br>是可安裝、可測試、可延伸的後端工具。</h1>
+      <p class="lead">go-masker 展示了 API 設計、反射處理、泛型封裝、標準 library 介面整合，以及以測試守住相容性的能力。</p>
+
+      <section class="matrix">
+        <article class="card">
+          <strong class="mint">API 設計</strong>
+          <span>讓呼叫端少寫樣板碼，也降低誤用機率。</span>
+        </article>
+        <article class="card">
+          <strong class="blue">Go 反射</strong>
+          <span>處理 struct、pointer、slice、map 的遞迴遮罩。</span>
+        </article>
+        <article class="card">
+          <strong class="violet">泛型封裝</strong>
+          <span>Sensitive[T] 讓敏感值帶著安全輸出語意移動。</span>
+        </article>
+        <article class="card">
+          <strong class="amber">工程品質</strong>
+          <span>測試、race、coverage 與相容性案例完整覆蓋。</span>
+        </article>
+      </section>
+
+      <section class="codebox">
+        <div class="line">go get github.com/ggwhite/go-masker/v3</div>
+        <div class="line">masker.NewEmail(<span class="str">"ggw.chang@gmail.com"</span>)</div>
+        <div class="line comment">// ggw****@gmail.com</div>
+      </section>
+
+      <footer class="footer">
+        <span>Cake 作品集素材 · project story cards</span>
+        <span class="repo">github.com/ggwhite/go-masker</span>
+      </footer>
+    </main>
+  </section>
+</body>
+</html>
