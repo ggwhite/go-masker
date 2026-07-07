@@ -1,0 +1,91 @@
+id: F014-mobile-id-configurable-format
+name: 'F014: mobile/id masker 支援可配置格式（多國支援）'
+description: |
+    完整設計見 docs/design/F014-mobile-id-configurable-format-spec.md（Designer 角色請務必先讀）。
+
+    ## 背景
+
+    現行 MobileMasker（`mobile` tag）寫死遮罩第 4~7 位（台灣 10 位手機號），
+    IDMasker（`id` tag）寫死遮罩第 7~10 位（台灣身分證 1 字母 + 9 數字）。
+    其他國家的手機號碼和身分證件格式與台灣不同，無法直接使用。
+
+    ## 目標
+
+    沿用 F013（`tel-` 動態 tag）建立的模式，新增 `mobile-` 和 `id-` 前綴的
+    動態 tag，讓使用者在 struct tag 上宣告保留前幾碼、保留後幾碼，中間全遮罩：
+
+    ```
+    mobile-<keepFront>-<keepEnd>
+    id-<keepFront>-<keepEnd>
+    ```
+
+    - `keepFront`：非負整數，保留的前幾碼數量
+    - `keepEnd`：非負整數，保留的後幾碼數量
+    - `keepFront` 和 `keepEnd` 不可同時為 0
+
+    ## 遮罩規則
+
+    令 L = len(value)（以 rune 計）：
+
+    - `L == 0` → 原樣返回
+    - `keepFront + keepEnd >= L` → 原樣返回（無法遮罩）
+    - 否則 → `value[:keepFront] + mask*(L-keepFront-keepEnd) + value[L-keepEnd:]`
+
+    ## 範例
+
+    | tag | 輸入 | 國家 | 輸出 |
+    |---|---|---|---|
+    | `mobile` | `0987654321` | 台灣（預設，不變） | `0987***321` |
+    | `mobile-3-4` | `09012345678` | 日本（11位） | `090****5678` |
+    | `mobile-3-4` | `2025551234` | 美國（10位） | `202***1234` |
+    | `mobile-0-4` | `447911123456` | 英國（12位） | `********3456` |
+    | `id` | `A123456789` | 台灣（預設，不變） | `A12345****` |
+    | `id-0-4` | `123456789` | 美國 SSN（9位） | `*****6789` |
+    | `id-4-0` | `123456789012` | 日本 My Number（12位） | `1234********` |
+    | `id-3-3` | `S1234567D` | 新加坡 NRIC（9位） | `S12***67D` |
+
+    ## Non-goal
+
+    - 不做 region preset（`mobile:jp`、`id:us` 等）
+    - 不做輸入正規化
+    - 不改 Masker interface 或 Option 機制
+
+    ## 向後相容
+
+    既有 `TypeMobile`（`mask:"mobile"`）與 MobileMasker、`TypeID`（`mask:"id"`）
+    與 IDMasker 完全不動，新 tag 為純新增的動態解析路徑。
+status: in-progress
+priority: 2
+profile: full
+subtasks:
+    - id: keepfront-keepend-parser
+      name: generic.go 新增 mobile-/id- 動態 tag 解析（keepFront-keepEnd）
+      status: ""
+      description: parseGenericMask 新增 mobile- 和 id- 前綴分派，共用 keepFront/keepEnd 解析邏輯
+    - id: mask-middle-logic
+      name: 實作保留頭尾、遮罩中間的邏輯
+      status: ""
+      description: 含 keepEnd==0 省略尾部、keepFront+keepEnd>=L 原值返回等邊界處理
+      depends:
+        - keepfront-keepend-parser
+    - id: error-handling
+      name: 非法參數回傳 error，邊界情況回傳原值
+      status: ""
+      description: 分段數非 2、非負整數 parse 失敗、同時為 0 → error；keepFront+keepEnd>=L → 不遮罩回傳原值
+      depends:
+        - keepfront-keepend-parser
+    - id: tests
+      name: 涵蓋多國格式、邊界案例、回歸測試
+      status: ""
+      description: mobile 日本/美國/英國格式；id 美國 SSN/日本 My Number/新加坡 NRIC；邊界案例；確認既有 mobile/id 行為不受影響
+      depends:
+        - mask-middle-logic
+        - error-handling
+rules:
+    - 不修改既有 mobile/id tag 行為與輸出格式
+    - 不改動 Masker interface，比照 first-N/last-N/tel- 的動態 tag 模式
+    - mobile- 和 id- 共用相同的 keepFront-keepEnd 解析與遮罩邏輯，避免重複程式碼
+    - keepFront/keepEnd 為非負整數，同時為 0 視為非法 tag 回傳 error
+    - keepFront+keepEnd >= 字串長度時原樣返回，不遮罩
+depends:
+    - F013-tel-configurable-region
