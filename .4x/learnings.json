@@ -8,8 +8,8 @@
       "content": "改 API 形狀但保留行為的 feature，task-brief 應明列「逐字一致」例外（如 URLMasker 的 stdlib xxxxx、NoneMasker 不適用 mask char），避免 coder 為統一介面而誤改遮罩邏輯。",
       "created_at": "2026-06-23T15:34:02.150756+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T18:06:55.171481+08:00",
-      "used_count": 5,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 9,
       "status": "active"
     },
     {
@@ -19,8 +19,8 @@
       "content": "functional option 配置（WithMaskChar）必須在 AC 明確要求「每個 marshaler 持有獨立 masker 實例」，並寫測試驗證不污染 DefaultMaskerMarshaler，否則全域單例會跨 marshaler 串改輸出。",
       "created_at": "2026-06-23T15:34:02.150756+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T17:05:35.164811+08:00",
-      "used_count": 1,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 5,
       "status": "active"
     },
     {
@@ -30,8 +30,8 @@
       "content": "遷移類 feature 直接沿用上一版（v2）的既有測資作為輸出斷言，是驗證「行為不變」最省力且最可信的方式。",
       "created_at": "2026-06-23T15:34:02.150756+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T18:06:55.171481+08:00",
-      "used_count": 5,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 6,
       "status": "active"
     },
     {
@@ -41,8 +41,8 @@
       "content": "安全型別的所有自動輸出路徑（fmt/json/text/slog）必須統一只讀快取的 masked 欄位、絕不碰 raw；設計時就把這條列為跨方法的不變式，並用編譯期 interface 斷言（var _ ... = T{}）鎖住 value-type 滿足介面。",
       "created_at": "2026-06-23T15:45:39.811172+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T20:52:33.392456+08:00",
-      "used_count": 3,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 7,
       "status": "active"
     },
     {
@@ -52,8 +52,8 @@
       "content": "對含 nil 函式指標或 zero value 的退化情況，預設行為要選「最安全」而非「最方便」——遮罩函式為 nil 時 masked 設空字串而非回傳原值，避免退化路徑洩漏。",
       "created_at": "2026-06-23T15:45:39.811172+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T21:27:41.727108+08:00",
-      "used_count": 6,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 10,
       "status": "active"
     },
     {
@@ -63,8 +63,8 @@
       "content": "委派既有函式的新型別，parity 測試應逐一斷言新建構子輸出與被委派的 package-level 函式逐字一致，確保未自行重寫邏輯、輸出不漂移。",
       "created_at": "2026-06-23T15:45:39.811172+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T20:52:33.392456+08:00",
-      "used_count": 5,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 6,
       "status": "active"
     },
     {
@@ -74,8 +74,8 @@
       "content": "verify gate 用 grep 偵測禁用 API（如 zap.Any/zap.Reflect）時，應限定在程式碼語境（排除註解/字串）或用 go/analysis，避免 doc 註解內提到該關鍵字就觸發誤判。",
       "created_at": "2026-06-23T16:02:14.911051+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T21:27:41.727108+08:00",
-      "used_count": 2,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 4,
       "status": "active"
     },
     {
@@ -85,8 +85,8 @@
       "content": "新增第三方整合（如 logging adapter、gin middleware）時，一律走獨立 go.mod sub-module + replace =\u003e ../ 範式，把重量級依賴隔離在 sub-module，確保 core module 保持零外部依賴。",
       "created_at": "2026-06-23T16:02:14.911051+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T21:27:41.727108+08:00",
-      "used_count": 4,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 8,
       "status": "active"
     },
     {
@@ -96,8 +96,8 @@
       "content": "撰寫設計文件／註解時，若專案有 CI grep 禁用 token（如 reflection 欄位建構子名稱），一律用語意描述而非逐字寫出該 token；同時讓 masking 走 field.String 寫值繞開 reflection，避免觸發 CI 誤判。",
       "created_at": "2026-06-23T16:02:14.911051+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T21:27:41.727108+08:00",
-      "used_count": 2,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 5,
       "status": "active"
     },
     {
@@ -107,8 +107,8 @@
       "content": "為 zapcore.Core wrapper 寫測試時，用 zaptest/observer 建可觀測 core 並逐一斷言 Write 與 With 兩條路徑，避免只測 Write 而漏掉 logger.With 累積的 context field。",
       "created_at": "2026-06-23T16:12:39.456215+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -118,8 +118,8 @@
       "content": "對 keyword/heuristic 類的被動防護機制，task-brief 應明確要求 GoDoc 同時標示 false positive 與 false negative 風險，並指出有顯式方案時本層為多餘，避免被誤當主力方案。",
       "created_at": "2026-06-23T16:12:39.456215+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T21:27:41.727108+08:00",
-      "used_count": 1,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 5,
       "status": "active"
     },
     {
@@ -129,8 +129,8 @@
       "content": "效能型 AC 要明訂量測 fixture 與門檻計算方式（如 warm ≤ cold × 50%），避免不同 fixture 下指標互比產生 INFO 雜訊（如 Format allocs 在寬 metadata fixture 反而高於 Struct）。",
       "created_at": "2026-06-23T16:54:47.2709+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T18:06:55.171481+08:00",
-      "used_count": 1,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 2,
       "status": "active"
     },
     {
@@ -140,8 +140,8 @@
       "content": "重構既有 reflect 路徑為 cache 時，task-brief 應逐條列出原分支語意（nil ptr/slice/map、未匯出欄位、無 tag 欄位），讓 reviewer 能一對一比對等價性，確保輸出不漂移。",
       "created_at": "2026-06-23T16:54:47.2709+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T18:06:55.171481+08:00",
-      "used_count": 2,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 6,
       "status": "active"
     },
     {
@@ -151,8 +151,8 @@
       "content": "為 metadata 結構新增欄位（如 elemKind）時，只在實際被消費的 kind 分支填值，避免對 Ptr 等未使用分支計算冗餘欄位。",
       "created_at": "2026-06-23T16:54:47.2709+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T18:06:55.171481+08:00",
-      "used_count": 1,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 4,
       "status": "active"
     },
     {
@@ -162,8 +162,8 @@
       "content": "新增或修改 Go 測試檔後，coder 結束前必須跑 gofmt -l 確認零輸出，避免純格式問題佔用一整個 review round。",
       "created_at": "2026-06-23T17:23:08.103842+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T21:27:41.727108+08:00",
-      "used_count": 4,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 7,
       "status": "active"
     },
     {
@@ -173,8 +173,8 @@
       "content": "parity / 驗收型 feature 應在 coder-report 附上「來源測試函式 → 目標測試函式」對照表，讓 reviewer 能逐項核對覆蓋完整性而非靠抽查。",
       "created_at": "2026-06-23T17:23:08.103842+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T20:52:33.392456+08:00",
-      "used_count": 3,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 4,
       "status": "active"
     },
     {
@@ -184,8 +184,8 @@
       "content": "API 形狀刻意不同但行為一致的 parity 例外（如 SetMasker→WithMaskChar），須在 task-brief 與 AC 預先明列「刻意差異（parity 例外）」清單，讓 reviewer 直接判定為設計而非缺漏，避免反覆釐清。建立平行對照的新 module 時尤須如此。",
       "created_at": "2026-06-23T17:23:08.103842+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T20:52:33.392456+08:00",
-      "used_count": 3,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 7,
       "status": "active"
     },
     {
@@ -195,8 +195,8 @@
       "content": "逐字 port 既有程式碼時，連同 inline 註解一起搬——若來源註解描述的是『修正前』的舊行為，會被一起帶入新檔；port 後應對照當前契約逐條驗證註解仍成立，否則一搬就是 stale。",
       "created_at": "2026-06-23T18:24:39.221362+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 3,
       "status": "active"
     },
     {
@@ -206,8 +206,8 @@
       "content": "byte-identical parity port 的測試應額外覆蓋兩條路徑（如 Format vs Struct）在邊緣型別（scalar interface{} 配非 struct tag）上的分歧；只測列舉清單內情形會讓刻意/非刻意分歧都無測試守護。",
       "created_at": "2026-06-23T18:24:39.221362+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -217,8 +217,8 @@
       "content": "效能重構（如改用 cache）的 review 應逐分支 1:1 對照原始 reflect 邏輯，並回溯近期 bugfix commit 確認各項修正在重構後完整保留，避免效能優化悄悄回退既有 fix。",
       "created_at": "2026-06-23T18:24:39.221362+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 3,
       "status": "active"
     },
     {
@@ -228,8 +228,8 @@
       "content": "slog.Attr 無法用 == 直接比較，table 測試需逐欄位斷言（Key、Value.Kind、Value.String）；example test 印 attr.Key 與 attr.Value.String() 而非接真實 logger，避免時間戳導致 Output 不決定性。",
       "created_at": "2026-06-23T21:02:26.42179+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -239,8 +239,8 @@
       "content": "薄封裝層（純委派 core 函式 + 包裝回傳型別）應保持零加工，遮罩語意一律繼承 core，確保跨 module（slogfield/zapfield/core）輸出逐字一致。",
       "created_at": "2026-06-23T21:02:26.42179+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "2026-06-23T21:27:41.727108+08:00",
-      "used_count": 1,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 4,
       "status": "active"
     },
     {
@@ -250,8 +250,8 @@
       "content": "當 run 從 coding phase 起跑、缺漏 Designer 產出（task-brief、acceptance-criteria、test-strategy）時，Tester 應依 feature YAML 推導 AC 並補建 test-strategy；後續 role 須能容忍上游 artifact 缺漏並明確標註來源。",
       "created_at": "2026-06-23T21:20:29.142866+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:16:52.439681+08:00",
+      "used_count": 2,
       "status": "active"
     },
     {
@@ -261,8 +261,8 @@
       "content": "為 ORM／自動序列化路徑實作介面（Scanner/Valuer）時，對未綁定設定的 zero-value receiver 應採容忍策略而非嚴格報錯，但必須在 report 中論述為何安全不變式（不洩漏原值）仍成立，並加對應測試（如 NilMaskNoLeak）。",
       "created_at": "2026-06-23T21:20:29.142866+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 4,
       "status": "active"
     },
     {
@@ -272,8 +272,8 @@
       "content": "實作 database/sql 介面時，測試應涵蓋驅動實際回傳型別（整數一律 int64、字串數字以 []byte 傳入）、overflow、型別不符回 error、以及 Scan(nil) 不 panic，並用編譯期斷言 var _ sql.Scanner/driver.Valuer 鎖定介面契約。",
       "created_at": "2026-06-23T21:20:29.142866+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:04:05.645586+08:00",
+      "used_count": 1,
       "status": "active"
     },
     {
@@ -283,8 +283,8 @@
       "content": "攔截器的 replay／還原邏輯（如把 body 塞回 c.Request.Body）在 error 與成功路徑都需執行時，應提前到分支判斷之前只寫一份，避免重複碼日後漏改造成吃掉下游 body 的回歸。",
       "created_at": "2026-06-23T21:45:37.685036+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
-      "last_used": "0001-01-01T00:00:00Z",
-      "used_count": 0,
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 3,
       "status": "active"
     },
     {
@@ -294,9 +294,57 @@
       "content": "邊界旗標（如 too-large）應在累積/寫入的單一收尾點判定為唯一真相，不要靠下游讀取端再補 OR 條件，否則狀態需協同才正確、易被誤刪。",
       "created_at": "2026-06-23T21:45:37.685036+08:00",
       "activated_at": "0001-01-01T00:00:00Z",
+      "last_used": "2026-07-07T22:08:33.089192+08:00",
+      "used_count": 3,
+      "status": "active"
+    },
+    {
+      "id": "L030",
+      "source_feature": "F014-mobile-id-configurable-format",
+      "source_role": "deep-reviewer",
+      "category": "design",
+      "content": "parseGenericMask 的三態回傳 (value, matched, error) 中，matched=false + error≠nil 的組合會被 Marshal 靜默丟棄。新增動態 tag 前綴時，若 error path 沿用 matched=false，應同時補 Marshal 端的 error-path 端對端測試，確認使用者收到的是具體錯誤而非泛用 'masker not found'。",
+      "created_at": "2026-07-07T22:17:58.056767+08:00",
+      "activated_at": "0001-01-01T00:00:00Z",
       "last_used": "0001-01-01T00:00:00Z",
       "used_count": 0,
-      "status": "active"
+      "status": "candidate"
+    },
+    {
+      "id": "L031",
+      "source_feature": "F014-mobile-id-configurable-format",
+      "source_role": "acceptor",
+      "category": "design",
+      "content": "動態 tag error path 回傳 matched=false 會導致 Marshal() 遺失具體錯誤訊息——未來新增動態 tag 時應統一評估是否改為 matched=true 傳遞驗證錯誤，或開 feature-gap 統一修正既有 first-/last-/tel-/mobile-/id- 的相同問題",
+      "created_at": "2026-07-07T22:17:58.05729+08:00",
+      "activated_at": "0001-01-01T00:00:00Z",
+      "last_used": "0001-01-01T00:00:00Z",
+      "used_count": 0,
+      "status": "candidate"
+    },
+    {
+      "id": "L032",
+      "source_feature": "F014-mobile-id-configurable-format",
+      "source_role": "acceptor",
+      "category": "process",
+      "content": "沿用既有 pattern（如 F013 tel-）的 feature 開發效率極高，一輪即 PASS——當新 feature 可完全套用前一個 feature 的架構模式時，Designer 可明確標註 pattern source 讓 Coder 直接參照，減少試誤",
+      "created_at": "2026-07-07T22:17:58.05729+08:00",
+      "activated_at": "0001-01-01T00:00:00Z",
+      "last_used": "0001-01-01T00:00:00Z",
+      "used_count": 0,
+      "status": "candidate"
+    },
+    {
+      "id": "L033",
+      "source_feature": "F014-mobile-id-configurable-format",
+      "source_role": "acceptor",
+      "category": "code-quality",
+      "content": "helper 函式保留未使用的參數（如 tag）以對齊簽名時，應在 GoDoc 或 task-brief 明確標註原因，避免每輪 review 重複討論同一問題",
+      "created_at": "2026-07-07T22:17:58.05729+08:00",
+      "activated_at": "0001-01-01T00:00:00Z",
+      "last_used": "0001-01-01T00:00:00Z",
+      "used_count": 0,
+      "status": "candidate"
     }
   ]
 }
