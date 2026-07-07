@@ -160,6 +160,91 @@ func TestMarshal_GenericTags_Tel(t *testing.T) {
 	}
 }
 
+func TestParseGenericMask_MobileID(t *testing.T) {
+	tests := []struct {
+		tag     string
+		value   string
+		want    string
+		matched bool
+		wantErr bool
+	}{
+		// mobile 正常案例
+		{tag: "mobile-3-4", value: "09012345678", want: "090****5678", matched: true},
+		{tag: "mobile-3-4", value: "2025551234", want: "202***1234", matched: true},
+		{tag: "mobile-0-4", value: "447911123456", want: "********3456", matched: true},
+		{tag: "mobile-4-3", value: "0987654321", want: "0987***321", matched: true},
+		{tag: "mobile-4-0", value: "0987654321", want: "0987******", matched: true},
+
+		// id 正常案例
+		{tag: "id-0-4", value: "123456789", want: "*****6789", matched: true},
+		{tag: "id-4-0", value: "123456789012", want: "1234********", matched: true},
+		{tag: "id-3-3", value: "S1234567D", want: "S12***67D", matched: true},
+		{tag: "id-6-0", value: "A123456789", want: "A12345****", matched: true},
+		{tag: "id-2-1", value: "AB1234567", want: "AB******7", matched: true},
+
+		// 邊界案例
+		{tag: "mobile-5-5", value: "1234567890", want: "1234567890", matched: true},
+		{tag: "mobile-3-4", value: "12345", want: "12345", matched: true},
+		{tag: "id-3-0", value: "", want: "", matched: true},
+		{tag: "mobile-1-1", value: "AB", want: "AB", matched: true},
+
+		// 多位元組字元（AC-26）
+		{tag: "mobile-2-2", value: "你好世界測試", want: "你好**測試", matched: true},
+		{tag: "id-1-1", value: "甲乙丙", want: "甲*丙", matched: true},
+
+		// 錯誤案例
+		{tag: "mobile-0-0", value: "123", matched: false, wantErr: true},
+		{tag: "id-0-0", value: "123", matched: false, wantErr: true},
+		{tag: "mobile-3", value: "123", matched: false, wantErr: true},
+		{tag: "id-1-2-3", value: "123", matched: false, wantErr: true},
+		{tag: "mobile-abc-4", value: "123", matched: false, wantErr: true},
+		{tag: "id-3-def", value: "123", matched: false, wantErr: true},
+		{tag: "mobile--1-4", value: "123", matched: false, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.tag+"/"+tt.value, func(t *testing.T) {
+			got, matched, err := parseGenericMask("*", tt.tag, tt.value)
+			if matched != tt.matched {
+				t.Errorf("matched = %v, want %v", matched, tt.matched)
+			}
+			if (err != nil) != tt.wantErr {
+				t.Errorf("err = %v, wantErr %v", err, tt.wantErr)
+			}
+			if matched && !tt.wantErr && got != tt.want {
+				t.Errorf("got = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMarshal_GenericTags_MobileID(t *testing.T) {
+	m := NewMaskerMarshaler()
+	tests := []struct {
+		tag   MaskerType
+		value string
+		want  string
+	}{
+		// 端對端整合
+		{"mobile-3-4", "09012345678", "090****5678"},
+		{"id-0-4", "123456789", "*****6789"},
+		// 回歸——既有行為不變
+		{TypeMobile, "0987654321", "0987***321"},
+		{TypeID, "A123456789", "A12345****"},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.tag)+"/"+tt.value, func(t *testing.T) {
+			got, err := m.Marshal(tt.tag, tt.value)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("got = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestMarshal_GenericTags_Error(t *testing.T) {
 	m := NewMaskerMarshaler()
 	if _, err := m.Marshal("first-abc", "hello"); err == nil {
