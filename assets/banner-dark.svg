@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title desc">
+<title id="title">go-masker</title>
+<desc id="desc">go-masker: mask sensitive data in Go structs with struct tags.</desc>
+<style>
+  .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .t  { fill: #E6EDF3; }
+  .m  { fill: #9198A1; }
+  .a  { fill: #4FD1E8; }
+  .b  { font-weight: 600; }
+</style>
+<rect width="1280" height="320" fill="#0D1117"/>
+<rect x="0.75" y="0.75" width="1278.5" height="318.5" rx="16" fill="#161B22" stroke="#30363D" stroke-width="1.5"/>
+<rect x="72" y="82" width="6" height="72" rx="3" fill="#4FD1E8"/>
+<text x="100" y="142" class="mono t b" font-size="64" letter-spacing="-1">go-masker</text>
+<text x="100" y="196" class="sans m" font-size="28">Mask sensitive data in Go structs with a tag</text>
+<rect x="100" y="226" width="140" height="36" rx="18" fill="#0B2A33" stroke="#1F6573" stroke-width="1.5"/>
+<text x="170.0" y="249.5" class="sans a b" font-size="16" text-anchor="middle">Struct tags</text>
+<rect x="252" y="226" width="150" height="36" rx="18" fill="#0B2A33" stroke="#1F6573" stroke-width="1.5"/>
+<text x="327.0" y="249.5" class="sans a b" font-size="16" text-anchor="middle">Sensitive[T]</text>
+<rect x="414" y="226" width="176" height="36" rx="18" fill="#0B2A33" stroke="#1F6573" stroke-width="1.5"/>
+<text x="502.0" y="249.5" class="sans a b" font-size="16" text-anchor="middle">zap · slog · gin</text>
+<text x="780" y="91" class="mono m" font-size="17">name</text>
+<text x="879.0" y="91" class="mono t" font-size="20" text-anchor="middle">J</text>
+<rect x="887.5" y="75" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="901.5" y="75" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<text x="921.0" y="91" class="mono t" font-size="20" text-anchor="middle">n</text>
+<text x="935.0" y="91" class="mono t" font-size="20" text-anchor="middle"> </text>
+<text x="949.0" y="91" class="mono t" font-size="20" text-anchor="middle">D</text>
+<rect x="957.5" y="75" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="971.5" y="75" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<text x="991.0" y="91" class="mono t" font-size="20" text-anchor="middle">e</text>
+<text x="780" y="135" class="mono m" font-size="17">email</text>
+<text x="879.0" y="135" class="mono t" font-size="20" text-anchor="middle">j</text>
+<text x="893.0" y="135" class="mono t" font-size="20" text-anchor="middle">o</text>
+<text x="907.0" y="135" class="mono t" font-size="20" text-anchor="middle">h</text>
+<rect x="915.5" y="119" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="929.5" y="119" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="943.5" y="119" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="957.5" y="119" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<text x="977.0" y="135" class="mono t" font-size="20" text-anchor="middle">@</text>
+<text x="991.0" y="135" class="mono t" font-size="20" text-anchor="middle">g</text>
+<text x="1005.0" y="135" class="mono t" font-size="20" text-anchor="middle">m</text>
+<text x="1019.0" y="135" class="mono t" font-size="20" text-anchor="middle">a</text>
+<text x="1033.0" y="135" class="mono t" font-size="20" text-anchor="middle">i</text>
+<text x="1047.0" y="135" class="mono t" font-size="20" text-anchor="middle">l</text>
+<text x="1061.0" y="135" class="mono t" font-size="20" text-anchor="middle">.</text>
+<text x="1075.0" y="135" class="mono t" font-size="20" text-anchor="middle">c</text>
+<text x="1089.0" y="135" class="mono t" font-size="20" text-anchor="middle">o</text>
+<text x="1103.0" y="135" class="mono t" font-size="20" text-anchor="middle">m</text>
+<text x="780" y="179" class="mono m" font-size="17">mobile</text>
+<text x="879.0" y="179" class="mono t" font-size="20" text-anchor="middle">0</text>
+<text x="893.0" y="179" class="mono t" font-size="20" text-anchor="middle">9</text>
+<text x="907.0" y="179" class="mono t" font-size="20" text-anchor="middle">8</text>
+<text x="921.0" y="179" class="mono t" font-size="20" text-anchor="middle">7</text>
+<rect x="929.5" y="163" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="943.5" y="163" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="957.5" y="163" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<text x="977.0" y="179" class="mono t" font-size="20" text-anchor="middle">3</text>
+<text x="991.0" y="179" class="mono t" font-size="20" text-anchor="middle">2</text>
+<text x="1005.0" y="179" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="780" y="223" class="mono m" font-size="17">credit</text>
+<text x="879.0" y="223" class="mono t" font-size="20" text-anchor="middle">4</text>
+<text x="893.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="907.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="921.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="935.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="949.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<rect x="957.5" y="207" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="971.5" y="207" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="985.5" y="207" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="999.5" y="207" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="1013.5" y="207" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<rect x="1027.5" y="207" width="11" height="20" rx="3" fill="#4FD1E8"/>
+<text x="1047.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="1061.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="1075.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="1089.0" y="223" class="mono t" font-size="20" text-anchor="middle">1</text>
+<text x="780" y="267" class="mono m" font-size="17">url</text>
+<text x="879.0" y="267" class="mono t" font-size="20" text-anchor="middle">h</text>
+<text x="893.0" y="267" class="mono t" font-size="20" text-anchor="middle">t</text>
+<text x="907.0" y="267" class="mono t" font-size="20" text-anchor="middle">t</text>
+<text x="921.0" y="267" class="mono t" font-size="20" text-anchor="middle">p</text>
+<text x="935.0" y="267" class="mono t" font-size="20" text-anchor="middle">s</text>
+<text x="949.0" y="267" class="mono t" font-size="20" text-anchor="middle">:</text>
+<text x="963.0" y="267" class="mono t" font-size="20" text-anchor="middle">/</text>
+<text x="977.0" y="267" class="mono t" font-size="20" text-anchor="middle">/</text>
+<text x="991.0" y="267" class="mono t" font-size="20" text-anchor="middle">u</text>
+<text x="1005.0" y="267" class="mono t" font-size="20" text-anchor="middle">:</text>
+<rect x="1013.5" y="251" width="11" height="20" rx="3" fill="#0B2A33" stroke="#1F6573" stroke-width="1.2"/>
+<text x="1019.0" y="267" class="mono a b" font-size="17" text-anchor="middle">x</text>
+<rect x="1027.5" y="251" width="11" height="20" rx="3" fill="#0B2A33" stroke="#1F6573" stroke-width="1.2"/>
+<text x="1033.0" y="267" class="mono a b" font-size="17" text-anchor="middle">x</text>
+<rect x="1041.5" y="251" width="11" height="20" rx="3" fill="#0B2A33" stroke="#1F6573" stroke-width="1.2"/>
+<text x="1047.0" y="267" class="mono a b" font-size="17" text-anchor="middle">x</text>
+<rect x="1055.5" y="251" width="11" height="20" rx="3" fill="#0B2A33" stroke="#1F6573" stroke-width="1.2"/>
+<text x="1061.0" y="267" class="mono a b" font-size="17" text-anchor="middle">x</text>
+<rect x="1069.5" y="251" width="11" height="20" rx="3" fill="#0B2A33" stroke="#1F6573" stroke-width="1.2"/>
+<text x="1075.0" y="267" class="mono a b" font-size="17" text-anchor="middle">x</text>
+<text x="1089.0" y="267" class="mono t" font-size="20" text-anchor="middle">@</text>
+<text x="1103.0" y="267" class="mono t" font-size="20" text-anchor="middle">h</text>
+<text x="1117.0" y="267" class="mono t" font-size="20" text-anchor="middle">o</text>
+<text x="1131.0" y="267" class="mono t" font-size="20" text-anchor="middle">s</text>
+<text x="1145.0" y="267" class="mono t" font-size="20" text-anchor="middle">t</text>
+</svg>

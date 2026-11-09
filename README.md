@@ -1,10 +1,27 @@
-# Go Masker
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+  <img src="assets/banner-light.svg" alt="go-masker: mask sensitive data in Go structs with a tag" width="100%">
+</picture>
+
+**Mask passwords, emails, phones, IDs and cards in Go structs with a single struct tag.**
 
 [![build workflow](https://github.com/ggwhite/go-masker/actions/workflows/go.yml/badge.svg)](https://github.com/ggwhite/go-masker/actions)
 [![GoDoc](https://godoc.org/github.com/ggwhite/go-masker?status.svg)](https://godoc.org/github.com/ggwhite/go-masker)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ggwhite/go-masker)](https://goreportcard.com/report/github.com/ggwhite/go-masker)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/ggwhite/go-masker/blob/master/LICENSE)
 [![Release](https://img.shields.io/github/release/ggwhite/go-masker.svg?style=flat-square)](https://github.com/ggwhite/go-masker/releases/latest)
+
+[Install](#install) · [Quick Start](#quick-start) · [Features](#features) · [Masker Types](#masker-types) · [Custom Masker](#custom-masker) · [Sub-Modules](#sub-modules) · [Docs](docs/masker-types.md)
+
+</div>
+
+---
+
+<div align="center">
+  <img src="assets/demo.webp" alt="A User struct with name, email, password, mobile, tel, id, credit and url tags; go run ./examples/demo prints each field before masking in red and the m.Struct result in green, e.g. John Doe to J**n D**e and 4111111111111111 to 411111******1111" width="900" />
+</div>
 
 Go Masker is a simple and extensible library for masking sensitive data in Go structs. Use struct tags to control how fields are masked — passwords, emails, IDs, credit cards, and more.
 
@@ -62,6 +79,61 @@ You can also use the package-level default instance:
 ```go
 masked, err := masker.DefaultMaskerMarshaler.Struct(u)
 ```
+
+## Features
+
+<table>
+<tr>
+<td width="42%" valign="middle">
+
+### Dynamic tags, zero setup
+
+Pick how much to keep right in the tag: **`mid-4-4`** for API keys, **`mobile-3-4`** /
+**`id-0-4`** for country-specific formats, **`tel-2-3-8`** for international phone
+numbers, and **`first-N`** / **`last-N`** for anything else. No registration needed.
+
+</td>
+<td><img src="assets/tags.webp" alt="An Account struct tagged mid-4-4, tel-2-3-8, mobile-3-4, id-0-4, first-3 and last-4; go run ./examples/tour tags shows sk-abc123xyz become sk-a****3xyz and 8675588888888 become +86-755-8888-****" /></td>
+</tr>
+<tr>
+<td width="42%" valign="middle">
+
+### Plug in your own masker
+
+Anything with a **`Mask(string) string`** method is a masker. **`Register`** it under a
+tag name and use that tag like a built-in one. Swap the mask character for the whole
+marshaler with **`WithMaskChar('#')`**.
+
+</td>
+<td><img src="assets/custom.webp" alt="An SSNMasker type with a Mask method; go run ./examples/tour custom registers it as ssn and prints &{J**n D**e ***-**-6789}, then the same struct with WithMaskChar('#') as &{J##n D##e ***-**-6789}" /></td>
+</tr>
+<tr>
+<td width="42%" valign="middle">
+
+### Nested structs, slices and maps
+
+**`struct`** recurses into nested structs and pointers, string **slices** take any
+masker tag, and **`mapstruct`** masks every map value while keeping the keys. `nil`
+values stay `nil`.
+
+</td>
+<td><img src="assets/nested.webp" alt="An Order struct with a *Person tagged struct, a []string tagged email and a map[string]Item tagged mapstruct; go run ./examples/tour nested prints each field fully masked" /></td>
+</tr>
+<tr>
+<td width="42%" valign="middle">
+
+### Sensitive[T]: safe by default
+
+Wrap a value in **`Sensitive[T]`** and every automatic output — **fmt, JSON, slog** — is
+masked. Reading the raw value takes an explicit **`.Reveal()`**, and **`WithRedact()`**
+hides it completely.
+
+</td>
+<td><img src="assets/sensitive.webp" alt="go run ./examples/tour sensitive: NewPhone(0987654321) prints 0987***321 with fmt and JSON, Reveal() returns 0987654321, and WithRedact() prints [REDACTED]" /></td>
+</tr>
+</table>
+
+Run any of them yourself: `go run ./examples/demo` or `go run ./examples/tour tags|custom|nested|sensitive`.
 
 ## Sensitive[T] — Type-Safe Masking
 
@@ -143,18 +215,21 @@ fmt.Println(m.Format(foo))
 | `none`      | No masking, return as-is         | `foo`                            | `foo`                           |
 | `password`  | Always returns 14 asterisks      | `secret`                         | `**************`                |
 | `name`      | Masks middle characters          | `John Doe`                       | `J**n D**e`                     |
-| `addr`      | Masks last 6 characters          | `台北市內湖區內湖路一段737巷1號` | `台北市內湖區內湖路一段7******` |
+| `addr`      | Keeps first 6 chars, rest → `******` | `台北市內湖區內湖路一段737巷1號` | `台北市內湖區******`            |
 | `email`     | Keeps first 3 chars and domain   | `john@gmail.com`                 | `joh****@gmail.com`             |
 | `mobile`    | Masks 3 digits from 4th position | `0987654321`                     | `0987***321`                    |
 | `mobile-F-E`| Keep first F, last E, mask middle| `09012345678` (`mobile-3-4`)     | `090****5678`                   |
 | `tel`       | Formats and masks last 4 digits  | `0227993078`                     | `(02)2799-****`                 |
 | `id`        | Masks digits 7–10                | `A123456789`                     | `A12345****`                    |
 | `id-F-E`    | Keep first F, last E, mask middle| `123456789` (`id-0-4`)           | `*****6789`                     |
-| `mid-F-E`   | Generic: keep F front, E end     | `sk-abc123xyz` (`mid-4-4`)       | `sk-a***3xyz`                   |
+| `mid-F-E`   | Generic: keep F front, E end     | `sk-abc123xyz` (`mid-4-4`)       | `sk-a****3xyz`                  |
 | `credit`    | Masks digits 7–12                | `4111111111111111`               | `411111******1111`              |
 | `url`       | Masks URL password               | `http://user:pass@host`          | `http://user:xxxxx@host`        |
 | `all`       | Replaces every character         | `secret`                         | `******`                        |
 | `abuse`     | Masks abusive words via trie     | `bad word`                       | `*** word`                      |
+| `first-N`   | Masks the first N chars          | `ABC123` (`first-3`)             | `***123`                        |
+| `last-N`    | Masks the last N chars           | `secret99` (`last-4`)            | `secr****`                      |
+| `tel-R-N`   | Region + number, last 4 masked   | `0227993078` (`tel-2-8`)         | `02-2799-****`                  |
 | `struct`    | Recursively masks nested struct  | —                                | —                               |
 | `mapstruct` | Recursively masks map values     | —                                | —                               |
 
@@ -181,7 +256,7 @@ longer than 2 digits, or numbers that include a country code:
 ```go
 type Contact struct {
     TWPhone     string `mask:"tel-2-8"`         // "0227993078" -> "02-2799-****"
-    CNPhone     string `mask:"tel-3-8-space"`   // "75588888888" -> "755 8888-****"
+    CNPhone     string `mask:"tel-3-8-space"`   // "75588888888" -> "755 8888 ****"
     IntlPhone   string `mask:"tel-2-3-8"`       // "8675588888888" -> "+86-755-8888-****"
 }
 ```
@@ -203,7 +278,7 @@ type User struct {
     PhoneUS  string `mask:"mobile-3-4"` // "2025551234"  -> "202***1234"
     SSN      string `mask:"id-0-4"`     // "123456789"   -> "*****6789"
     MyNumber string `mask:"id-4-0"`     // "123456789012" -> "1234********"
-    APIKey   string `mask:"mid-4-4"`    // "sk-abc123xyz" -> "sk-a***3xyz"
+    APIKey   string `mask:"mid-4-4"`    // "sk-abc123xyz" -> "sk-a****3xyz"
 }
 ```
 

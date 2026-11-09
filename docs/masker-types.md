@@ -9,7 +9,7 @@ Complete reference for all built-in masker types.
 | `none` | `none.go` | Returns value unchanged | `foo` → `foo` |
 | `password` | `password.go` | Always 14 mask chars | `secret` → `**************` |
 | `name` | `name.go` | Masks middle chars per word | `John Doe` → `J**n D**e` |
-| `addr` | `address.go` | Masks last 6 chars | `台北市內湖區內湖路一段737巷1號` → `台北市內湖區內湖路一段7******` |
+| `addr` | `address.go` | Keeps first 6 chars, rest → `******` | `台北市內湖區內湖路一段737巷1號` → `台北市內湖區******` |
 | `email` | `email.go` | Keeps first 3 + domain | `john@gmail.com` → `joh****@gmail.com` |
 | `mobile` | `mobile.go` | Masks 3 digits from pos 4 | `0987654321` → `0987***321` |
 | `tel` | `telephone.go` | Formats `(XX)XXXX-****` | `0227993078` → `(02)2799-****` |
@@ -31,7 +31,7 @@ Handled by `parseGenericMask()` in `generic.go`. No registration needed.
 | `tel-<intlLen>-<regionLen>-<numberLen>[-<sep>]` | Same, with leading international code | `mask:"tel-2-3-8"` on `8675588888888` → `+86-755-8888-****` |
 | `mobile-<keepFront>-<keepEnd>` | Keep first F and last E chars, mask middle | `mask:"mobile-3-4"` on `09012345678` → `090****5678` |
 | `id-<keepFront>-<keepEnd>` | Keep first F and last E chars, mask middle | `mask:"id-0-4"` on `123456789` → `*****6789` |
-| `mid-<keepFront>-<keepEnd>` | Generic version of mobile-/id- | `mask:"mid-4-4"` on `sk-abc123xyz` → `sk-a***3xyz` |
+| `mid-<keepFront>-<keepEnd>` | Generic version of mobile-/id- | `mask:"mid-4-4"` on `sk-abc123xyz` → `sk-a****3xyz` |
 
 ### tel- dynamic tag
 
@@ -58,7 +58,7 @@ it's country-specific and out of scope for a masking library.
 | Tag | Input (caller-normalized) | Output |
 |-----|---------------------------|--------|
 | `tel-2-8` | `0227993078` | `02-2799-****` |
-| `tel-3-8-space` | `75588888888` | `755 8888-****` |
+| `tel-3-8-space` | `75588888888` | `755 8888 ****` |
 | `tel-2-3-8` | `8675588888888` | `+86-755-8888-****` |
 
 See [`docs/design/F013-tel-configurable-region-spec.md`](design/F013-tel-configurable-region-spec.md)
@@ -101,7 +101,7 @@ category (API keys, tokens, account numbers, etc.).
 
 | Tag | Input | Output |
 |-----|-------|--------|
-| `mid-4-4` | `sk-abc123xyz` | `sk-a***3xyz` |
+| `mid-4-4` | `sk-abc123xyz` | `sk-a****3xyz` |
 | `mid-2-2` | `ABCDEF` | `AB**EF` |
 | `mid-1-0` | `secret` | `s*****` |
 
