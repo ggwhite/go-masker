@@ -14,34 +14,61 @@ Requires Go 1.22+.
 
 ## Project Structure
 
-Each masker type has its own file:
+Core files:
 
-| File | Masker Type |
-|------|-------------|
-| `masker.go` | Core: `MaskerMarshaler`, `Struct()`, `Marshal()`, `NewMaskerMarshaler()` |
-| `password.go` | `password` — always 14 mask chars |
-| `name.go` | `name` — masks middle chars |
-| `address.go` | `addr` — masks last 6 chars |
-| `email.go` | `email` — keeps first 3 chars + domain |
-| `mobile.go` | `mobile` — masks positions 4–6 |
-| `telephone.go` | `tel` — formats `(XX)XXXX-****` |
-| `id.go` | `id` — masks positions 7–10 |
-| `credit.go` | `credit` — masks positions 7–12 |
-| `url.go` | `url` — masks URL password via `url.Redacted()` |
-| `none.go` | `none` — returns value unchanged |
-| `abuse.go` | `abuse` — trie-based word masking |
-| `abuse_loader.go` | Loads abuse word lists from file/reader |
+| File | Contents |
+|------|----------|
+| `masker.go` | `Masker` interface, `MaskerType` constants (`TypeXxx`), `MaskerMarshaler` (`Struct`, `Marshal`, `MustMarshal`, `Register`, `Unregister`, `Get`, `List`), `NewMaskerMarshaler(opts ...Option)`, `DefaultMaskerMarshaler` |
+| `format.go` | `MaskerMarshaler.Format` — masked string without building a masked struct |
+| `type_cache.go` | Per-type field metadata cache used by `Struct` / `Format` |
+| `generic.go` | `AllMasker` and the dynamic tags (`first-N`, `last-N`, `mobile-`, `id-`, `mid-`, `tel-`) via `parseGenericMask()` |
+| `convenience.go` | Package-level one-value functions (`Mask`, `Mobile`, `Email`, ...) backed by `DefaultMaskerMarshaler` |
+| `sensitive*.go` | `Sensitive[T]` safe type, its constructors (`NewPhone`, ...), options (`WithRedact`, `WithRedactText`) and `database/sql` support |
+| `abuse_loader.go` | `AbuseWordLoader` — loads word lists from file, reader, string or slice |
+
+Each built-in masker has its own file (full behavior and examples: `docs/masker-types.md`):
+
+| File | Tag | Behavior |
+|------|-----|----------|
+| `none.go` | `none` | returns value unchanged |
+| `password.go` | `password` | always 14 mask chars |
+| `name.go` | `name` | masks middle chars per word |
+| `address.go` | `addr` | keeps first 6 chars, rest → `******` |
+| `email.go` | `email` | keeps first 3 chars + domain |
+| `mobile.go` | `mobile` | masks 3 digits from position 4 (`0987***321`) |
+| `telephone.go` | `tel` | formats `(XX)XXXX-****` |
+| `id.go` | `id` | masks positions 7–10 |
+| `credit.go` | `credit` | masks positions 7–12 |
+| `url.go` | `url` | masks the URL password as fixed `xxxxx`; ignores the mask char |
+| `abuse.go` | `abuse` | trie-based dictionary word masking; empty dictionary returns text unchanged |
+| `generic.go` | `all` | replaces every char |
+
+Integrations are separate Go sub-modules (own `go.mod` with `replace => ../`), so the core module keeps zero external dependencies:
+
+| Dir | Module |
+|-----|--------|
+| `slogfield/` | `log/slog` attr helpers |
+| `zapfield/` | `zap.Field` helpers + `WrapCore` key-based interceptor |
+| `ginmasker/` | Gin access-log middleware |
+
+Public API reference: `docs/api.md`.
 
 ## Adding a New Masker Type
 
-1. Create `<type>.go` implementing the `Masker` interface:
+1. Create `<type>.go` implementing the `Masker` interface. The mask char is injected at construction, so `Mask` takes only the value:
    ```go
-   type MyMasker struct{}
-   func (m *MyMasker) Marshal(s, i string) string { ... }
+   type MyMasker struct {
+       mask string
+   }
+
+   func (m *MyMasker) Mask(value string) string { ... }
    ```
-2. Add a `MaskerType` constant in `masker.go`
-3. Register it in `NewMaskerMarshaler()` and `DefaultMaskerMarshaler`
-4. Add tests in `<type>_test.go`
+2. Add a `TypeMy MaskerType = "my"` constant in `masker.go`.
+3. Register it in the map inside `NewMaskerMarshaler()` with `&MyMasker{mask: c}`. `DefaultMaskerMarshaler` is built by `NewMaskerMarshaler()`, so it needs no separate step.
+4. Optionally add a package-level function in `convenience.go` and a `Sensitive` constructor in `sensitive_constructors.go`.
+5. Add tests in `<type>_test.go`, and update `docs/masker-types.md`, `docs/api.md` and the README tag table with outputs produced by running the code.
+
+Users can also add a masker at runtime without changing the library: `m.Register("my", &MyMasker{...})`.
 
 ## Testing
 
@@ -98,10 +125,12 @@ release notes 格式：
 
 ## Key Types
 
-- `Masker` interface — implement to create a custom masker
-- `MaskerMarshaler` — manages maskers, exposes `Struct()` and `Marshal()`
-- `MaskerType` — string alias for masker tag values
-- `AbuseMasker` — trie-based masker, must be initialized with words
-- `AbuseWordLoader` — loads word lists from file or `io.Reader`
+- `Masker` interface — `Mask(value string) string`; implement to create a custom masker
+- `MaskerMarshaler` — manages maskers; `Struct()`, `Format()`, `Marshal()`, `MustMarshal()`; concurrent-safe
+- `Option` / `WithMaskChar(rune)` — per-marshaler mask char; never changes `DefaultMaskerMarshaler`
+- `MaskerType` — string alias for `mask:"..."` tag values (`TypeMobile`, ...)
+- `Sensitive[T]` — every automatic output (fmt, JSON, text, slog) is masked; only `Reveal()` returns the raw value
+- `AbuseMasker` — trie-based masker; masks nothing until words are added (`AddWords` / `NewAbuseMaskerWithWords`)
+- `AbuseWordLoader` — loads word lists from file, `io.Reader`, string or slice
 
 @.4x/learnings-context.md
